@@ -8,7 +8,8 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
 
 ## Prerequisites
 1. PIMA Hunter Pro alarm, with 32, 96 or 144 zones.
-1. PIMA Home Automation kit (SA-232, LCL-11A and Serial-to-USB cable).
+1. PIMA Home Automation kit (SA-232, LCL-11A and Serial-to-USB cable):
+   ![Diagram by PIMA &copy;](home_automation_kit.png)
 1. Raspberry Pi or similar, connected to the alarm through the Home Automation kit.
 1. Installer login code. It is not possible to connect to the alarm using a user login code.
 
