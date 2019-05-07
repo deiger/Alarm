@@ -1,14 +1,14 @@
 # PIMA Alarms
 
-This program implements an interface for negotiation with PIMA Hunter Pro alarms.  
+This program implements an interface for negotiation with [PIMA Hunter Pro alarms](https://www.pima-alarms.com/our-products/hunter-pro-series/).  
 It was built based on PIMA&trade;'s General Specification for Home Automation &
 Building Management protocol Ver. 1.15.  
 PIMA&trade; is a trademark of PIMA Electronic Systems Ltd, http://www.pima-alarms.com.  
 This program was built with no affiliation of PIMA Electronic Systems Ltd.
 
 ## Prerequisites
-1. PIMA Hunter Pro alarm, with 32, 96 or 144 zones.
-1. PIMA Home Automation kit (SA-232, LCL-11A and Serial-to-USB cable).  
+1. PIMA Hunter Pro alarm&trade;, with 32, 96 or 144 zones.
+1. PIMA Home Automation kit&trade; (SA-232, LCL-11A and Serial-to-USB cable).  
    Diagram by PIMA&trade; &copy;:
    ![Diagram by PIMA&trade; &copy;](home_automation_kit.png)
 1. Raspberry Pi or similar, connected to the alarm through the Home Automation kit.
@@ -23,8 +23,8 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    ```bash
    pip3 install crcmod pyserial
    ```
-1. Download `pima.py` and `pima_server.py`, and put them in the same directory.
-1. Set run permissions to `pima_server.py`:
+1. Download [pima.py](pima.py) and [pima_server.py](pima_server.py), and put them in the same directory.
+1. Set run permissions to [pima_server.py](pima_server.py):
    ```bash
    chmod a+x pima_server.py
    ```
@@ -51,3 +51,8 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
       When `arm` is specified:
       - `mode` - Either `full_arm`, `home1`, `home2` or `disarm`.
       - `partitions` Comma separated list of partitions. Default is `1`.
+
+## Next steps
+1. [Groovy](http://groovy-lang.org/) [Device Type Handlers](https://docs.smartthings.com/en/latest/device-type-developers-guide/) for [SmartThings](https://www.smartthings.com/) integration.
+1. [MQTT](http://en.wikipedia.org/wiki/Mqtt) support using [Mosquitto](http://mosquitto.org/), for [HomeAssistant](https://www.home-assistant.io/) and [openHAB](https://www.openhab.org/) integration.
+1. Support further functionality, e.g. change user codes.
