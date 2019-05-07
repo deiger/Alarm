@@ -12,7 +12,9 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    Diagram by PIMA&trade; &copy;:
    ![Diagram by PIMA&trade; &copy;](home_automation_kit.png)
 1. Raspberry Pi or similar, connected to the alarm through the Home Automation kit.
-1. Installer login code. It is not possible to connect to the alarm using a user login code.
+   - Tested on [Raspbian](https://www.raspberrypi.org/downloads/raspbian/). Other operating systems
+     may use different path structure for the serial ports.
+1. Alarm installer login code. Unfortunately, it is not possible to connect to the alarm using a user login code.
 
 ## Setup
 1. Create an SSL certificate, if you wish to access the server through HTTPS:
