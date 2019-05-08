@@ -43,6 +43,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
      Consider generating a random key using `uuid -v4`.
    - `--login` or `-l` - The installer login code to the alarm.
    - `--zones` or `-z` - Number of zones supported by the alarm, one of 32, 96 or 144. Default is 32.
+   - `--log_level` - The minimal log level to send to syslog. Default is WARNING.
 1. Access e.g. using curl:
    ```bash
    curl -i --cert ./cert.pem --key ./key.pem 'http://localhost:7777/pima?key=my_random_key&command=status'

@@ -189,13 +189,18 @@ def ParseArguments() -> argparse.Namespace:
   arg_parser.add_argument('-k', '--key', required=True,
                           help='URL key to authenticate calls.')
   arg_parser.add_argument('-l', '--login', required=True, choices=LoginCodes(),
-                          help='Login code to the PIMA alarm')
+                          help='Login code to the PIMA alarm.')
   arg_parser.add_argument('-z', '--zones', type=int, default=32,
                           choices={32, 96, 144}, help='Alarm supported zones.')
+  arg_parser.add_argument('--log_level', default='WARNING',
+                          choices={'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'},
+                          help='Minimal log level.')
   return arg_parser.parse_args()
 
 
 if __name__ == '__main__':
+  _parsed_args = ParseArguments()
+
   log_socket = '/var/run/syslog' if sys.platform == 'darwin' else '/dev/log'
   logging_handler = logging.handlers.SysLogHandler(address=log_socket)
   logging_handler.setFormatter(
@@ -203,10 +208,8 @@ if __name__ == '__main__':
                         '{filename}:{lineno}] {message}',
                          datefmt='%m%d %H:%M:%S', style='{'))
   logger = logging.getLogger()
-  logger.setLevel(os.environ.get("LOGLEVEL", "INFO"))
+  logger.setLevel(_parsed_args.log_level)
   logger.addHandler(logging_handler)
-
-  _parsed_args = ParseArguments()
 
   _pima_server = AlarmServer()
   _pima_server.start()
