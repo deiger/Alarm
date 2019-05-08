@@ -83,6 +83,11 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    ```bash
    sudo ln -s /lib/systemd/system/pima.service /etc/systemd/system/multi-user.target.wants/pima.service
    ```
+1. Enable and start the new service:
+   ```bash
+   sudo systemctl enable pima.service
+   sudo systemctl start pima.service
+   ```
 ## Next steps
 1. [Groovy](http://groovy-lang.org/) [Device Type Handlers](https://docs.smartthings.com/en/latest/device-type-developers-guide/) for [SmartThings](https://www.smartthings.com/) integration.
 1. [MQTT](http://en.wikipedia.org/wiki/Mqtt) support using [Mosquitto](http://mosquitto.org/), for [HomeAssistant](https://www.home-assistant.io/) and [openHAB](https://www.openhab.org/) integration.
