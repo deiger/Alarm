@@ -31,7 +31,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    chmod a+x pima_server.py
    ```
 ## Run
-1. Run the server, e.g.:
+1. Test out that you can run the server, e.g.:
    ```bash
    ./pima_server.py --ssl_cert cert.pem --ssl_key key.pem --port 7777 --key my_random_key --login 000000 --zones 32
    ```
@@ -53,7 +53,34 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
       When `arm` is specified:
       - `mode` - Either `full_arm`, `home1`, `home2` or `disarm`.
       - `partitions` Comma separated list of partitions. Default is `1`.
+## Automate
+1. Create a dedicated directory for the script files, and move the files to it.
+   Pass the ownership to root. e.g.:
+   ```bash
+   sudo mkdir /usr/lib/pima
+   sudo mv pima_server.py pima.py key.pem cert.pem /usr/lib/pima
+   sudo chown root:root /usr/lib/pima/*
+   ```
+1. Create a service configuration file (as root), e.g. `/lib/systemd/system/pima.service`:
+   ```INI
+   [Unit]
+   Description=PIMA alarm server
+   After=network.target
 
+   [Service]
+   ExecStart=/usr/bin/python3 -u pima_server.py --ssl_cert cert.pem --ssl_key key.pem --port 7777 --key my_random_key --login 000000 --zones 32
+   WorkingDirectory=/usr/lib/pima
+   StandardOutput=inherit
+   StandardError=inherit
+   Restart=always
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+1. Link to it from `/etc/systemd/system/`:
+   ```bash
+   sudo ln -s /lib/systemd/system/pima.service /etc/systemd/system/multi-user.target.wants/pima.service
+   ```
 ## Next steps
 1. [Groovy](http://groovy-lang.org/) [Device Type Handlers](https://docs.smartthings.com/en/latest/device-type-developers-guide/) for [SmartThings](https://www.smartthings.com/) integration.
 1. [MQTT](http://en.wikipedia.org/wiki/Mqtt) support using [Mosquitto](http://mosquitto.org/), for [HomeAssistant](https://www.home-assistant.io/) and [openHAB](https://www.openhab.org/) integration.
