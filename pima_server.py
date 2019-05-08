@@ -28,6 +28,7 @@ import argparse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import logging
+import logging.handlers
 import re
 import os
 import ssl
@@ -195,9 +196,15 @@ def ParseArguments() -> argparse.Namespace:
 
 
 if __name__ == '__main__':
-  logging.basicConfig(format='{levelname[0]}{asctime}.{msecs:03.0f}  '
-                      '{filename}:{lineno}] {message}', style='{',
-                      datefmt='%m%d %H:%M:%S', level=logging.INFO)
+  log_socket = '/var/run/syslog' if sys.platform == 'darwin' else '/dev/log'
+  logging_handler = logging.handlers.SysLogHandler(address=log_socket)
+  logging_handler.setFormatter(
+      logging.Formatter(fmt='{levelname[0]}{asctime}.{msecs:03.0f}  '
+                        '{filename}:{lineno}] {message}',
+                         datefmt='%m%d %H:%M:%S', style='{'))
+  logger = logging.getLogger()
+  logger.setLevel(os.environ.get("LOGLEVEL", "INFO"))
+  logger.addHandler(logging_handler)
 
   _parsed_args = ParseArguments()
 
