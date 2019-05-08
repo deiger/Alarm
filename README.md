@@ -46,8 +46,8 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    - `--log_level` - The minimal log level to send to syslog. Default is WARNING.
 1. Access e.g. using curl:
    ```bash
-   curl -i --cert ./cert.pem --key ./key.pem 'http://localhost:7777/pima?key=my_random_key&command=status'
-   curl -i --cert ./cert.pem --key ./key.pem 'http://localhost:7777/pima?key=my_random_key&command=arm&mode=home1&partitions=1'
+   curl -ik 'http://localhost:7777/pima?key=my_random_key&command=status'
+   curl -ik 'http://localhost:7777/pima?key=my_random_key&command=arm&mode=home1&partitions=1'
    ```
    CGI Arguments:
    - `key` - The key specified on the web server startup.
