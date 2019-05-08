@@ -39,7 +39,8 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    - `--ssl_cert` - Path to the SSL certificate file. If not set, will run a non-encrypted web server.
    - `--ssl_key` - Path to the SSL private key file. If not set, will get the key from the certificate file.
    - `--port` or `-p` - Port for the web server.
-   - `--key` or `-k` - Preferably random key to authenticate the server calls.
+   - `--key` or `-k` - A key to authenticate the server calls.  
+     Consider generating a random key using `uuidgen`.
    - `--login` or `-l` - The installer login code to the alarm.
    - `--zones` or `-z` - Number of zones supported by the alarm, one of 32, 96 or 144. Default is 32.
 1. Access e.g. using curl:
