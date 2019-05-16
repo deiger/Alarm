@@ -31,40 +31,37 @@ import logging
 import logging.handlers
 import re
 import os
+import paho.mqtt.client as mqtt
 import ssl
 import sys
 import threading
 import time
+import typing
 from urllib.parse import parse_qs, urlparse, ParseResult
 
 import pima
 
 
-_pima_server = None
-_parsed_args = None
-
-
 class AlarmServer(threading.Thread):
   """Class maintaining the current status and sends commands to the alarm."""
   _SERIAL_BASE = '/dev/serial/by-path'
-  def __init__(self):
-    self._alarm = None
+  def __init__(self) -> None:
     try:
-      ports = os.listdir(self._SERIAL_BASE)
+      ports = os.listdir(self._SERIAL_BASE)  # type: typing.List[str]
     except IOError:
       logging.exception('Failed to lookup serial port.')
       sys.exit(1)
     if not ports:
       logging.error('Serial port is missing!')
       sys.exit(1)
-    port = os.path.join(self._SERIAL_BASE, ports[0])
+    port = os.path.join(self._SERIAL_BASE, ports[0])  # type: str
     logging.debug('Port: %s.', port)
     try:
-      self._alarm = pima.Alarm(_parsed_args.zones, port)
+      self._alarm = pima.Alarm(_parsed_args.zones, port)  # type: pima.Alarm
     except pima.Error as e:
       logging.exception('Failed to create alarm class.')
       sys.exit(1)
-    self._status = self._alarm.get_status()
+    self._status = self._alarm.get_status()  # type: pima.Status
     logging.info('Status: %s.', self._status)
     while not self._status['logged in']:
       self._status = self._alarm.login(_parsed_args.login)
@@ -73,58 +70,93 @@ class AlarmServer(threading.Thread):
     self._alarm_lock = threading.Lock()
     super(AlarmServer, self).__init__(name='PIMA Alarm Server')
 
-  def __del__(self):
+  def __del__(self) -> None:
     if self._alarm:
       del self._alarm
 
-  def run(self):
+  def run(self) -> None:
     """Continuously query the alarm for status."""
     while True:
       with self._alarm_lock:
-        status = self._alarm.get_status()
+        status = self._alarm.get_status()  # type: pima.Status
         while not status['logged in']:
           # Re-login if previous session ended.
           status = self._alarm.login(_parsed_args.login)
-        with self._status_lock:
-          self._status = status
-      logging.info('Status: %s.', self._status)
+        self._set_status(status)
       time.sleep(1)
 
-  def get_status(self) -> dict:
+  def get_status(self) -> pima.Status:
     """Gets the internally stored alarm status."""
     with self._status_lock:
       return self._status
 
-  def arm(self, mode: pima.Arm, partitions: set) -> dict:
+  def arm(self, mode: pima.Arm, partitions: pima.Partitions) -> pima.Status:
     """Arms (or disarms) the alarm, returning the status."""
     with self._alarm_lock:
-      status = self._alarm.arm(mode, partitions)
-      with self._status_lock:
-        self._status = status
-        logging.info('Status: %s.', self._status)
-        return self._status
+      status = self._alarm.arm(mode, partitions)  # type: pima.Status
+      self._set_status(status)
+      return status
 
-    
+  def _set_status(self, status: pima.Status) -> None:
+    with self._status_lock:
+      if self._status == status:
+        return  # No update, ignore.
+      self._status = status
+    logging.info('Status: %s.', self._status)
+    mqtt_publish_status(status)
+
+
+def RunJsonCommand(query: dict) -> dict:
+  _CMD_STATUS = 'status'
+  _CMD_ARM = 'arm'
+  if not _pima_server:
+    return {'error': 'No server.'}
+  try:
+    command = query['command']
+  except KeyError:
+    return {'error': 'Missing command.'}
+  if isinstance(command, list):
+    command = command[0]
+  if command == _CMD_STATUS:
+    return _pima_server.get_status()
+  if command == _CMD_ARM:
+    try:
+      mode = query['mode']
+      if isinstance(mode, list):
+        mode = mode[0]
+      mode = pima.Arm[mode.upper()]
+    except KeyError:
+      return {'error': 'Invalid arm mode.'}
+    partitions = pima.Partitions(
+        {int(p) for p in query.get('partitions', ['1'])})
+    return _pima_server.arm(mode, partitions)
+  return {'error': 'Invalid command.'}
+
+
+class JsonEncoder(json.JSONEncoder):
+  """Class for JSON encoding."""
+  def default(self, obj):
+    if isinstance(obj, set):
+      return list(obj)
+    return json.JSONEncoder.default(self, obj)
+
+
+def to_json(data: dict) -> bytes:
+  """Encode the provided dictionary as JSON."""
+  return bytes(json.dumps(data, cls=JsonEncoder), 'utf-8')
+
+
 class HTTPRequestHandler(BaseHTTPRequestHandler):
   """Handler for PIMA alarm http requests."""
   _PIMA_URL = '/pima'
-  _CMD_STATUS = 'status'
-  _CMD_ARM = 'arm'
 
-  class JsonEncoder(json.JSONEncoder):
-    """Class for JSON encoding."""
-    def default(self, obj):
-      if isinstance(obj, set):
-        return list(obj)
-      return json.JSONEncoder.default(self, obj)
-
-  def do_HEAD(self):
+  def do_HEAD(self) -> None:
     """Return a JSON header."""
     self.send_response(200)
     self.send_header('Content-type', 'application/json')
     self.end_headers()
 
-  def do_GET(self):
+  def do_GET(self) -> None:
     """Vaildate and run the request."""
     self.do_HEAD()
     logging.debug('Request: %s', self.path)
@@ -133,36 +165,34 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
     if not self.is_valid_url(parsed_url.path, query) or not _pima_server:
       self.write_json({'error': 'Invalid URL.'})
       return
-    command = query['command'][0]
-    if command == self._CMD_STATUS:
-      self.write_json(_pima_server.get_status())
-      return
-    if command == self._CMD_ARM:
-      try:
-        mode = pima.Arm[query['mode'][0].upper()]
-      except KeyError:
-        self.write_json({'error': 'Invalid arm mode.'})
-        return
-      partitions = {int(p) for p in query.get('partitions', ['1'])}
-      self.write_json(_pima_server.arm(mode, partitions))
-      return
-    self.write_json({'error': 'Invalid command.'})
+    self.write_json(RunJsonCommand(query))
 
-  def write_json(self, data: dict):
+  def write_json(self, data: dict) -> None:
     """Send out the provided data dict as JSON."""
     logging.debug('Response: %r', data)
-    self.wfile.write(bytes(json.dumps(data, cls=self.JsonEncoder), 'utf-8'))
+    self.wfile.write(to_json(data))
 
   @classmethod
-  def is_valid_url(cls, path: str, query: dict):
+  def is_valid_url(cls, path: str, query: dict) -> bool:
     """Validate the provided URL."""
     if path != cls._PIMA_URL:
       return False
     if query.get('key',[''])[0] != _parsed_args.key:
       return False
-    if query.get('command',[''])[0] not in {cls._CMD_STATUS, cls._CMD_ARM}:
-      return False
     return True
+
+
+def mqtt_on_connect(client: mqtt.Client, userdata, flags, rc):
+  client.subscribe(_mqtt_topics['sub'])
+
+
+def mqtt_on_message(client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
+  mqtt_publish_status(RunJsonCommand(message.payload))
+
+
+def mqtt_publish_status(status: dict) -> None:
+  if _mqtt_client:
+    _mqtt_client.publish(_mqtt_topics['pub'], payload=to_json(status))
 
 
 class LoginCodes(object):
@@ -192,6 +222,16 @@ def ParseArguments() -> argparse.Namespace:
                           help='Login code to the PIMA alarm.')
   arg_parser.add_argument('-z', '--zones', type=int, default=32,
                           choices={32, 96, 144}, help='Alarm supported zones.')
+  arg_parser.add_argument('--mqtt_host', default=None,
+                          help='MQTT broker hostname or IP address.')
+  arg_parser.add_argument('--mqtt_port', type=int, default=1883,
+                          help='MQTT broker port.')
+  arg_parser.add_argument('--mqtt_client_id', default=None,
+                          help='MQTT client ID.')
+  arg_parser.add_argument('--mqtt_user', default=None,
+                          help='<user:password> for the MQTT channel.')
+  arg_parser.add_argument('--mqtt_topic', default='pima_alarm',
+                          help='MQTT topic.')
   arg_parser.add_argument('--log_level', default='WARNING',
                           choices={'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'},
                           help='Minimal log level.')
@@ -199,7 +239,7 @@ def ParseArguments() -> argparse.Namespace:
 
 
 if __name__ == '__main__':
-  _parsed_args = ParseArguments()
+  _parsed_args = ParseArguments()  # type: argparse.Namespace
 
   log_socket = '/var/run/syslog' if sys.platform == 'darwin' else '/dev/log'
   logging_handler = logging.handlers.SysLogHandler(address=log_socket)
@@ -211,8 +251,22 @@ if __name__ == '__main__':
   logger.setLevel(_parsed_args.log_level)
   logger.addHandler(logging_handler)
 
-  _pima_server = AlarmServer()
+  _pima_server = AlarmServer()  # type: AlarmServer
   _pima_server.start()
+
+  _mqtt_client = None  # type: typing.Optional[mqtt.Client]
+  _mqtt_topics = {}  # type: typing.Dict[str, str]
+  if _parsed_args.mqtt_host:
+    _mqtt_topics['pub'] = os.path.join(_parsed_args.mqtt_topic, 'status')
+    _mqtt_topics['sub'] = os.path.join(_parsed_args.mqtt_topic, 'command')
+    _mqtt_client = mqtt.Client(client_id=_parsed_args.mqtt_client_id,
+                               clean_session=True)
+    _mqtt_client.on_connect = mqtt_on_connect
+    _mqtt_client.on_message = mqtt_on_message
+    if _parsed_args.mqtt_user:
+      _mqtt_client.username_pw_set(*_parsed_args.mqtt_user.split(':',1))
+    _mqtt_client.connect(_parsed_args.mqtt_host, _parsed_args.mqtt_port)
+    _mqtt_client.loop_start()
 
   httpd = HTTPServer(('', _parsed_args.port), HTTPRequestHandler)
   if _parsed_args.ssl_cert:
@@ -225,4 +279,6 @@ if __name__ == '__main__':
     pass
 
   httpd.server_close()
+  if _mqtt_client:
+    _mqtt_client.loop_stop()
   del _pima_server

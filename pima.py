@@ -31,6 +31,7 @@ import logging
 import serial
 import termios
 import time
+import typing
 
 
 class Error(Exception):
@@ -44,6 +45,10 @@ class Arm(enum.Enum):
   HOME1    = b'\x02'
   HOME2    = b'\x03'
   DISARM   = b'\x00'
+
+
+Status = typing.NewType('Status', typing.Dict[str, typing.Any])
+Partitions = typing.NewType('Partitions', typing.Set[int])
 
 
 class Alarm(object):
@@ -64,7 +69,7 @@ class Alarm(object):
     LOGIN     = b'\x04'
     PARAMETER = b'\x05'
 
-  def __init__(self, zones: int, port: int):
+  def __init__(self, zones: int, port: str) -> None:
     try:
       self._channel = serial.Serial(port=port,
                                     baudrate=2400,
@@ -74,26 +79,27 @@ class Alarm(object):
     except (termios.error, serial.serialutil.SerialException) as e:
       self._channel = None
       raise Error('Failed to connect to serial port.') from e
-    self._crc = crcmod.mkCrcFun(0x18005, rev=True, initCrc=0x0000, xorOut=0x0000)
-    self._zones = zones
-    self._module_id = self._ZONES_TO_MODULE_ID[self._zones]
+    self._crc = crcmod.mkCrcFun(0x18005, rev=True, initCrc=0x0000,
+                                xorOut=0x0000)
+    self._zones = zones  # type: int
+    self._module_id = self._ZONES_TO_MODULE_ID[self._zones]  # type: bytes
   
-  def __del__(self):
+  def __del__(self) -> None:
     self._close()
 
   def __enter__(self):
     return self
 
-  def __exit__(self, unused_type, unused_value, unused_traceback):
+  def __exit__(self, unused_type, unused_value, unused_traceback) -> None:
     self._close()
 
-  def login(self, code: str) -> bytes:
+  def login(self, code: str) -> Status:
     data = bytes([int(digit) for digit in code]).ljust(6, b'\xff')
     self._read_message()
     self._send_message(self._Message.WRITE, self._Channel.LOGIN, data=data)
     return self.get_status()
 
-  def get_status(self) -> dict:
+  def get_status(self) -> Status:
     """Returns the current alarm status."""
     try:
       response = self._read_message()
@@ -106,7 +112,7 @@ class Alarm(object):
         logging.debug('Read message: %r.', d)
       response = self._read_message()
     self._send_message(self._Message.STATUS, self._Channel.IDLE)
-    data = {'logged in': False}
+    data = Status({'logged in': False})
     if not response:
         return data
     if response[2:3] != self._Message.STATUS.value:
@@ -147,7 +153,7 @@ class Alarm(object):
     data['command ack'] = bool(flags & 1 << 1)
     return data
 
-  def arm(self, mode: Arm, partitions: set) -> bytes:
+  def arm(self, mode: Arm, partitions: Partitions) -> Status:
     """Arms (or disarms) the provided alarm partitions."""
     self._read_message()
     address = sum(1<<(p-1) for p in partitions).to_bytes(2, byteorder='little')
@@ -156,13 +162,13 @@ class Alarm(object):
         self._Channel.SYSTEM, address=address, data=mode.value)
     return self.get_status()
 
-  def zones(self) -> bytes:
+  def zones(self) -> Status:
     raise NotImplementedError("No support yet for zones.")
 
-  def outputs(self) -> bytes:
+  def outputs(self) -> Status:
     raise NotImplementedError("No support yet for outputs.")
 
-  def parameters(self) -> bytes:
+  def parameters(self) -> Status:
     raise NotImplementedError("No support yet for parameters.")
 
   def _read_message(self) -> bytes:
@@ -184,7 +190,7 @@ class Alarm(object):
     return data
 
   def _send_message(self, message: _Message, channel: _Channel,
-                    address: bytes=b'', data: bytes=b'') -> bytes:
+                    address: bytes=b'', data: bytes=b'') -> None:
     output = b''.join((self._module_id, message.value, channel.value,
                        bytes([len(address)]), address, data))
     output = bytes([len(output)]) + output
@@ -195,7 +201,7 @@ class Alarm(object):
       time.sleep(1)
 
   @staticmethod
-  def _parse_zones(data: bytes) -> set:
+  def _parse_zones(data: bytes) -> typing.Set[int]:
     bits = int.from_bytes(data, byteorder='little')
     return {i+1 for i in range(bits.bit_length()) if bits & 1 << i}
     
@@ -203,8 +209,7 @@ class Alarm(object):
   def _make_hex(data: bytes) -> str:
     return ' '.join('%02x' % d for d in data)
     
-  def _close(self):
+  def _close(self) -> None:
     if self._channel:
       self._channel.close()
       self._channel = None
-  

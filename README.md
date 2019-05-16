@@ -23,17 +23,17 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    ```
 1. Install additional Python libraries:
    ```bash
-   pip3 install crcmod pyserial
+   pip3 install crcmod paho-mqtt pyserial
    ```
 1. Download [pima.py](pima.py) and [pima_server.py](pima_server.py), and put them in the same directory.
 1. Set run permissions to [pima_server.py](pima_server.py):
    ```bash
    chmod a+x pima_server.py
    ```
-## Run
+## Run for testing
 1. Test out that you can run the server, e.g.:
    ```bash
-   ./pima_server.py --ssl_cert cert.pem --ssl_key key.pem --port 7777 --key my_random_key --login 000000 --zones 32
+   ./pima_server.py --ssl_cert cert.pem --ssl_key key.pem --port 7777 --key my_random_key --login 000000 --mqtt_host localhost
    ```
    Parameters:
    - `--ssl_cert` - Path to the SSL certificate file. If not set, will run a non-encrypted web server.
@@ -43,6 +43,12 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
      Consider generating a random key using `uuid -v4`.
    - `--login` or `-l` - The installer login code to the alarm.
    - `--zones` or `-z` - Number of zones supported by the alarm, one of 32, 96 or 144. Default is 32.
+   - `--mqtt_host` - The MQTT broker hostname or IP address. Must be set to enable MQTT.
+   - `--mqtt_port` - The MQTT broker port. Default is 1883.
+   - `--mqtt_client_id` - The MQTT client ID. If not set, a random client ID will be generated.
+   - `--mqtt_user` - &lt;user:password&gt; for the MQTT channel. If not set, no authentication is used.
+   - `--mqtt_topic` - The MQTT root topic. Default is &quot;pima_alarm&quot;. The server will listen on topic
+     &lt;{mqtt_topic}/command&gt; and publish to &lt;{mqtt_topic}/status&gt;.
    - `--log_level` - The minimal log level to send to syslog. Default is WARNING.
 1. Access e.g. using curl:
    ```bash
@@ -55,7 +61,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
       When `arm` is specified:
       - `mode` - Either `full_arm`, `home1`, `home2` or `disarm`.
       - `partitions` Comma separated list of partitions. Default is `1`.
-## Automate
+## Run as a service
 1. Create a dedicated directory for the script files, and move the files to it.
    Pass the ownership to root. e.g.:
    ```bash
@@ -70,7 +76,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    After=network.target
 
    [Service]
-   ExecStart=/usr/bin/python3 -u pima_server.py --ssl_cert cert.pem --ssl_key key.pem --port 7777 --key my_random_key --login 000000 --zones 32
+   ExecStart=/usr/bin/python3 -u pima_server.py --ssl_cert cert.pem --ssl_key key.pem --port 7777 --key my_random_key --login 000000 --mqtt_host localhost
    WorkingDirectory=/usr/lib/pima
    StandardOutput=inherit
    StandardError=inherit
@@ -88,7 +94,8 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    sudo systemctl enable pima.service
    sudo systemctl start pima.service
    ```
+1. If you use [MQTT](http://en.wikipedia.org/wiki/Mqtt) for [HomeAssistant](https://www.home-assistant.io/) or
+   [openHAB](https://www.openhab.org/), the broker should now provide the updated status of the alarm, and accepts commands.
 ## Next steps
 1. [Groovy](http://groovy-lang.org/) [Device Type Handlers](https://docs.smartthings.com/en/latest/device-type-developers-guide/) for [SmartThings](https://www.smartthings.com/) integration.
-1. [MQTT](http://en.wikipedia.org/wiki/Mqtt) support using [Mosquitto](http://mosquitto.org/), for [HomeAssistant](https://www.home-assistant.io/) and [openHAB](https://www.openhab.org/) integration.
 1. Support further functionality, e.g. change user codes.
