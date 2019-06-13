@@ -46,6 +46,7 @@ class AlarmServer(threading.Thread):
   """Class maintaining the current status and sends commands to the alarm."""
   _SERIAL_BASE = '/dev/serial/by-path'
   def __init__(self) -> None:
+    self._alarm = None  # type: pima.Alarm
     try:
       ports = os.listdir(self._SERIAL_BASE)  # type: typing.List[str]
     except IOError:
