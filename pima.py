@@ -68,6 +68,56 @@ class Alarm(object):
     OUTPUTS   = b'\x03'
     LOGIN     = b'\x04'
     PARAMETER = b'\x05'
+  _DISCRETE_FAILURES = {
+    1: 'System Low Power',
+    2: 'Unknown (2)',
+    3: 'System Error',
+    4: 'Zone Failure',
+    5: 'Unknown (5)',
+    6: 'Auxiliary Voltage Failure (Fuse short)',
+    7: 'W/L Zone Low Battery',
+    8: 'Wireless Receiver Failure',
+    9: 'Low Battery',
+    10: 'Telephone Line Failure',
+    11: 'MAINS Failure (220V)',
+    12: 'Tamper 1 Open',
+    13: 'Tamper 2 Open',
+    14: 'Clock Not Set',
+    15: 'RAM Error',
+    16: 'Station Commuincation Failure',
+    17: 'Siren 1 Failure',
+    18: 'Siren 2 Failure',
+    19: 'SMS Communication',
+    20: 'SMS Card',
+    21: 'GSM200 Error',
+    22: 'Network Comm. Fault',
+    23: 'Radio Fault',
+    24: 'Keyfob Rec. Fault',
+    25: 'Wireless Receiver Tamper Open',
+    26: 'Wireless Jamming',
+    27: 'GSM-200 Failure',
+    28: 'GSM Communication Failure',
+    29: 'GSM-SIM Failure',
+    30: 'GSM Link Failure',
+    31: 'GSM Comm. Fault 2nd station',
+    32: 'W/L Zone Supervision',
+    33: 'Unknown (33)',
+    34: 'Network fault Station 2',
+    35: 'Net4Pro Fault',
+    36: 'VVR 1 Fault',
+    37: 'VVR 2 Fault',
+    38: 'VVR 3 Fault',
+    39: 'VVR 4 Fault',
+    40: 'VVR 1 Power Fault',
+    41: 'VVR 2 Power Fault',
+    42: 'VVR 3 Power Fault',
+    43: 'VVR 4 Power Fault',
+    44: 'Unknown (44)',
+    45: 'Unknown (45)',
+    46: 'Unknown (46)',
+    47: 'Unknown (47)',
+    48: 'Unknown (48)',
+  }
 
   def __init__(self, zones: int, port: str) -> None:
     try:
@@ -129,23 +179,36 @@ class Alarm(object):
     # Get the data chuncks.
     # HP32 zones us using only the first bytes.
     zone_data = [response[i:i + self._zones // 8] for i in zone_bytes[:-1]]
-    data['open zones'] = self._parse_zones(zone_data[0])
-    data['alarmed zones'] = self._parse_zones(zone_data[1])
-    data['bypassed zones'] = self._parse_zones(zone_data[2])
-    data['failed zones'] = self._parse_zones(zone_data[3])
+    data['open zones'] = self._parse_bytes(zone_data[0])
+    data['alarmed zones'] = self._parse_bytes(zone_data[1])
+    data['bypassed zones'] = self._parse_bytes(zone_data[2])
+    data['failed zones'] = self._parse_bytes(zone_data[3])
     index = zone_bytes[-1]
     data['partitions'] = collections.defaultdict(set)
     for partition, value in enumerate(response[index:index+16], 1):
       data['partitions'][Arm(bytes([value])).name.lower()].add(partition)
     index += 16
-    for fail_type, count in (('discrete failures', 6),
-                             ('keypads failures', 2),
-                             ('zone expander failures', 10),
-                             ('relay expander failures', 5)):
-      failures = response[index:index+count]
-      if failures != b'\x00' * count:
-        data[fail_type] = failures
+    failures = self._parse_bytes(response[index:index+6])
+    failures = {self._DISCRETE_FAILURES[failure] for failure in failures}
+    index += 6
+    for fail_type, count in (('Keypad %d Failure', 1),
+                             ('Keypad %d Tamper', 1),
+                             ('Zone Expander %d Failure', 2),
+                             ('Zone Expander %d Tamper', 2),
+                             ('Zone Expander %d Low Voltage', 2),
+                             ('Zone Expander %d AC Failure', 2),
+                             ('Zone Expander %d Low Battery', 2),
+                             ('Out Expander %d Failure', 1),
+                             ('Out Expander %d Tamper', 1),
+                             ('Out Expander %d Low Voltage', 1),
+                             ('Out Expander %d AC Failure', 1),
+                             ('Out Expander %d Low Battery', 1)):
+      clustered_failures = self._parse_bytes(response[index:index+count])
+      for failure in clustered_failures:
+        failures.add(fail_type % failure)
       index += count
+    if failures:
+      data['failures'] = failures
     # Skip ID Account
     index += 4
     flags = response[index]
@@ -201,7 +264,7 @@ class Alarm(object):
       time.sleep(1)
 
   @staticmethod
-  def _parse_zones(data: bytes) -> typing.Set[int]:
+  def _parse_bytes(data: bytes) -> typing.Set[int]:
     bits = int.from_bytes(data, byteorder='little')
     return {i+1 for i in range(bits.bit_length()) if bits & 1 << i}
     
