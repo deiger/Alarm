@@ -14,7 +14,30 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
 1. Raspberry Pi or similar, connected to the alarm through the Home Automation kit.
    - Tested on [Raspbian](https://www.raspberrypi.org/downloads/raspbian/). Other operating systems
      may use different path structure for the serial ports.
-1. Alarm installer login code. Unfortunately, it is not possible to connect to the alarm using a user login code.
+1. Alarm technician login code. Unfortunately, it is not possible to connect to the alarm using a user login code.
+
+## Enabling the alarm serial port or network connection
+1. Enable extended menus:
+   - Primary login code
+   - `NEXT`
+   - Technician login code
+   - `5` (General parameters)
+   - `ENTR`
+   - `NEXT` till you get to the right `P` (extended menus)
+   - Toggle by `#`
+   - `ENTR`
+   - `END` to exit
+1. Enable the serial port:
+   - Primary login code
+   - `NEXT`
+   - Technician login code
+   - `3` (Communication)
+   - `ENTR`
+   - 8 x `NEXT` (Serial port)
+   - `ENTR`
+   - Toggle the first `L` (for serial connection) or first `N` (for net4pro) by `#`
+   - `ENTR`
+   - `END` to exit
 
 ## Setup
 1. Create an SSL certificate, if you wish to access the server through HTTPS:
@@ -41,7 +64,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    - `--port` or `-p` - Port for the web server.
    - `--key` or `-k` - An arbitrary string key to authenticate the server calls.  
      Consider generating a random key using `uuid -v4`.
-   - `--login` or `-l` - The installer login code to the alarm.
+   - `--login` or `-l` - The technician login code to the alarm.
    - `--zones` or `-z` - Number of zones supported by the alarm, one of 32, 96 or 144. Default is 32.
    - `--mqtt_host` - The MQTT broker hostname or IP address. Must be set to enable MQTT.
    - `--mqtt_port` - The MQTT broker port. Default is 1883.
