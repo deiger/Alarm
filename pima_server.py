@@ -46,7 +46,6 @@ class AlarmServer(threading.Thread):
   """Class maintaining the current status and sends commands to the alarm."""
   _SERIAL_BASE = '/dev/serial/by-path'
   def __init__(self) -> None:
-    self._alarm = None  # type: pima.Alarm
     try:
       ports = os.listdir(self._SERIAL_BASE)  # type: typing.List[str]
     except IOError:
@@ -59,7 +58,7 @@ class AlarmServer(threading.Thread):
     logging.debug('Port: %s.', port)
     try:
       self._alarm = pima.Alarm(_parsed_args.zones, port)  # type: pima.Alarm
-    except pima.Error as e:
+    except pima.Error:
       logging.exception('Failed to create alarm class.')
       sys.exit(1)
     self._status = self._alarm.get_status()  # type: pima.Status
@@ -166,7 +165,12 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
     if not self.is_valid_url(parsed_url.path, query) or not _pima_server:
       self.write_json({'error': 'Invalid URL.'})
       return
-    self.write_json(RunJsonCommand(query))
+    try:
+      self.write_json(RunJsonCommand(query))
+    except pima.Error:
+      logging.exception('Failed to run command.')
+      self.write_json({'error': 'Failed to run command.'})
+      sys.exit(1)
 
   def write_json(self, data: dict) -> None:
     """Send out the provided data dict as JSON."""

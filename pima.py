@@ -184,9 +184,9 @@ class Alarm(object):
     data['bypassed zones'] = self._parse_bytes(zone_data[2])
     data['failed zones'] = self._parse_bytes(zone_data[3])
     index = zone_bytes[-1]
-    data['partitions'] = collections.defaultdict(set)
+    data['partitions'] = {}
     for partition, value in enumerate(response[index:index+16], 1):
-      data['partitions'][Arm(bytes([value])).name.lower()].add(partition)
+      data['partitions'][partition] = Arm(bytes([value])).name.lower()
     index += 16
     failures = self._parse_bytes(response[index:index+6])
     failures = {self._DISCRETE_FAILURES[failure] for failure in failures}
@@ -242,6 +242,9 @@ class Alarm(object):
     data = bytes([length]) + self._channel.read(length + 2)
     if data == bytes([length]) * len(data):
       raise Error('Garbage ({})!'.format(length))
+    if len(data) != length + 3:
+      raise Error('Not enough data in channel: {} should have {} bytes.'.format(
+          self._make_hex(data), length + 3))
     logging.debug('>>> ' + self._make_hex(data))
     data, crc = data[:-2], int.from_bytes(data[-2:], byteorder='big')
     if (crc != self._crc(data)):
