@@ -46,18 +46,28 @@ class AlarmServer(threading.Thread):
   """Class maintaining the current status and sends commands to the alarm."""
   _SERIAL_BASE = '/dev/serial/by-path'
   def __init__(self) -> None:
+    ipaddr: str = None
+    ipport: int = None
+    serialport: str = None
+    if _parsed_args.pima_host and _parsed_args.pima_port:
+      # Connected by ethernet
+      ipaddr = _parsed_args.pima_host
+      ipport = _parsed_args.pima_port
+      logging.debug('IP Address: %s:%d.', ipaddr, ipport)
+    else:
+      # Connected by serial port
+      try:
+        ports = os.listdir(self._SERIAL_BASE)  # type: typing.List[str]
+      except IOError:
+        logging.exception('Failed to lookup serial port.')
+        sys.exit(1)
+      if not ports:
+        logging.error('Serial port is missing!')
+        sys.exit(1)
+      serialport = os.path.join(self._SERIAL_BASE, ports[0])
+      logging.debug('Port: %s.', serialport)
     try:
-      ports = os.listdir(self._SERIAL_BASE)  # type: typing.List[str]
-    except IOError:
-      logging.exception('Failed to lookup serial port.')
-      sys.exit(1)
-    if not ports:
-      logging.error('Serial port is missing!')
-      sys.exit(1)
-    port = os.path.join(self._SERIAL_BASE, ports[0])  # type: str
-    logging.debug('Port: %s.', port)
-    try:
-      self._alarm = pima.Alarm(_parsed_args.zones, port)  # type: pima.Alarm
+      self._alarm = pima.Alarm(_parsed_args.zones, serialport, ipaddr, ipport)  # type: pima.Alarm
     except pima.Error:
       logging.exception('Failed to create alarm class.')
       sys.exit(1)
@@ -227,6 +237,10 @@ def ParseArguments() -> argparse.Namespace:
                           help='Login code to the PIMA alarm.')
   arg_parser.add_argument('-z', '--zones', type=int, default=32,
                           choices={32, 96, 144}, help='Alarm supported zones.')
+  arg_parser.add_argument('--pima_host', default=None,
+                          help='Pima alarm hostname or IP address. if connected by ethernet.')
+  arg_parser.add_argument('--pima_port', type=int, default=None,
+                          help='Pima alarm port. if connected by ethernet.')
   arg_parser.add_argument('--mqtt_host', default=None,
                           help='MQTT broker hostname or IP address.')
   arg_parser.add_argument('--mqtt_port', type=int, default=1883,

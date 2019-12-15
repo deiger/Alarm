@@ -27,8 +27,10 @@ __author__ = 'droreiger@gmail.com (Dror Eiger)'
 import collections
 import crcmod
 import enum
+import io
 import logging
 import serial
+import socket
 import termios
 import time
 import typing
@@ -119,16 +121,25 @@ class Alarm(object):
     48: 'Unknown (48)',
   }
 
-  def __init__(self, zones: int, port: str) -> None:
-    try:
-      self._channel = serial.Serial(port=port,
-                                    baudrate=2400,
-                                    bytesize=serial.EIGHTBITS,
-                                    parity=serial.PARITY_NONE,
-                                    timeout=1)
-    except (termios.error, serial.serialutil.SerialException) as e:
-      self._channel = None
-      raise Error('Failed to connect to serial port.') from e
+  def __init__(self, zones: int, serialport: str = None,
+               ipaddr: str = None, ipport: int = None) -> None:
+    if serialport is None:
+      try:
+        self._channel = serial.Serial(port=serialport,
+                                      baudrate=2400,
+                                      bytesize=serial.EIGHTBITS,
+                                      parity=serial.PARITY_NONE,
+                                      timeout=1)
+      except (termios.error, serial.serialutil.SerialException) as e:
+        self._channel = None
+        raise Error('Failed to connect to serial port.') from e
+    else:
+      try:
+        self._channel = ClientSocketAsIO(socket.AF_INET, socket.SOCK_STREAM,
+                                         ipaddr, ipport)
+      except (socket.error, socket.gaierror) as e:
+        self._channel = None
+        raise Error('Error creating socket.') from e
     self._crc = crcmod.mkCrcFun(0x18005, rev=True, initCrc=0x0000,
                                 xorOut=0x0000)
     self._zones = zones  # type: int
@@ -279,3 +290,16 @@ class Alarm(object):
     if self._channel:
       self._channel.close()
       self._channel = None
+
+
+class ClientSocketAsIO(io.IOBase):
+  """Minimal adaptation of the socket client interface to IOBase."""
+  def __init__(family=AF_INET, type=SOCK_STREAM, address=None, port=None):
+    self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    self._socket.connect((address, port))
+  def close(self):
+    self._socket.close()
+  def read(self, size=-1):
+    self._socket.recv(size)
+  def write(self, b):
+    self._socket.send(b)
