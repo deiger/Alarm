@@ -123,7 +123,7 @@ class Alarm(object):
 
   def __init__(self, zones: int, serialport: str = None,
                ipaddr: str = None, ipport: int = None) -> None:
-    if serialport is None:
+    if serialport is not None:
       try:
         self._channel = serial.Serial(port=serialport,
                                       baudrate=2400,
