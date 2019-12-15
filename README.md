@@ -8,7 +8,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
 
 ## Prerequisites
 1. PIMA Hunter Pro alarm&trade;, with 32, 96 or 144 zones.
-1. PIMA Home Automation kit&trade; (SA-232, LCL-11A and Serial-to-USB cable).  
+1. PIMA Home Automation kit&trade; (`SA-232`, `LCL-11A` and Serial-to-USB cable), or `net4pro` ethernet connection.
    Diagram by PIMA&trade; &copy;:
    ![Diagram by PIMA&trade; &copy;](home_automation_kit.png)
 1. Raspberry Pi or similar, connected to the alarm through the Home Automation kit.
@@ -66,6 +66,8 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
      Consider generating a random key using `uuid -v4`.
    - `--login` or `-l` - The technician login code to the alarm.
    - `--zones` or `-z` - Number of zones supported by the alarm, one of 32, 96 or 144. Default is 32.
+   - `--pima_host` - Pima alarm hostname or IP address. Musft be set if connected by ethernet.
+   - `--pima_port` - Pima alarm port. Musft be set if connected by ethernet.
    - `--mqtt_host` - The MQTT broker hostname or IP address. Must be set to enable MQTT.
    - `--mqtt_port` - The MQTT broker port. Default is 1883.
    - `--mqtt_client_id` - The MQTT client ID. If not set, a random client ID will be generated.
