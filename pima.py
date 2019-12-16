@@ -294,7 +294,7 @@ class Alarm(object):
 
 class ClientSocketAsIO(io.IOBase):
   """Minimal adaptation of the socket client interface to IOBase."""
-  def __init__(family=socket.AF_INET, type=socket.SOCK_STREAM, address=None, port=None):
+  def __init__(self, family=socket.AF_INET, type=socket.SOCK_STREAM, address=None, port=None):
     self._socket = socket.socket(family, type)
     self._socket.connect((address, port))
   def close(self):
