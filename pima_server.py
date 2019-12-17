@@ -156,6 +156,11 @@ def to_json(data: dict) -> bytes:
   return bytes(json.dumps(data, cls=JsonEncoder), 'utf-8')
 
 
+def from_json(data: bytes) -> dict:
+  """Encode the provided dictionary as JSON."""
+  return json.loads(data.decode('utf-8'), cls=JsonEncoder)
+
+
 class HTTPRequestHandler(BaseHTTPRequestHandler):
   """Handler for PIMA alarm http requests."""
   _PIMA_URL = '/pima'
@@ -202,7 +207,7 @@ def mqtt_on_connect(client: mqtt.Client, userdata, flags, rc):
 
 
 def mqtt_on_message(client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
-  mqtt_publish_status(RunJsonCommand(message.payload))
+  mqtt_publish_status(RunJsonCommand(from_json(message.payload)))
 
 
 def mqtt_publish_status(status: dict) -> None:
