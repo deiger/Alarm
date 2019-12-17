@@ -158,7 +158,7 @@ def to_json(data: dict) -> bytes:
 
 def from_json(data: bytes) -> dict:
   """Encode the provided dictionary as JSON."""
-  return json.loads(data.decode('utf-8'), cls=JsonEncoder)
+  return json.loads(data.decode('utf-8'))
 
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
