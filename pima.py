@@ -135,8 +135,9 @@ class Alarm(object):
         raise Error('Failed to connect to serial port.') from e
     else:
       try:
-        self._channel = ClientSocketAsIO(socket.AF_INET, socket.SOCK_STREAM,
-                                         ipaddr, ipport)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((ipaddr, ipport))
+        self._channel = socket.SocketIO(sock, 'rwb')
       except (socket.error, socket.gaierror) as e:
         self._channel = None
         raise Error('Error creating socket.') from e
@@ -290,16 +291,3 @@ class Alarm(object):
     if self._channel:
       self._channel.close()
       self._channel = None
-
-
-class ClientSocketAsIO(io.IOBase):
-  """Minimal adaptation of the socket client interface to IOBase."""
-  def __init__(self, family=socket.AF_INET, type=socket.SOCK_STREAM, address=None, port=None):
-    self._socket = socket.socket(family, type)
-    self._socket.connect((address, port))
-  def close(self):
-    self._socket.close()
-  def read(self, size=-1):
-    self._socket.recv(size)
-  def write(self, b):
-    self._socket.send(b)
