@@ -54,6 +54,10 @@ class AlarmServer(threading.Thread):
       ipaddr = _parsed_args.pima_host
       ipport = _parsed_args.pima_port
       logging.debug('IP Address: %s:%d.', ipaddr, ipport)
+    elif _parsed_args.serialport:
+      # Connected by Serial
+      serialport = _parsed_args.serialport
+      logging.debug('Port: %s.', serialport)
     else:
       # Connected by serial port
       try:
@@ -242,6 +246,8 @@ def ParseArguments() -> argparse.Namespace:
                           help='Login code to the PIMA alarm.')
   arg_parser.add_argument('-z', '--zones', type=int, default=32,
                           choices={32, 96, 144}, help='Alarm supported zones.')
+  arg_parser.add_argument('--serialport', default=None,
+                          help='Serial port.  Example: /dev/serial0 if connected directly through GPIO serial.')
   arg_parser.add_argument('--pima_host', default=None,
                           help='Pima alarm hostname or IP address. if connected by ethernet.')
   arg_parser.add_argument('--pima_port', type=int, default=None,
