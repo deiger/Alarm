@@ -94,6 +94,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    sudo mkdir /usr/lib/pima
    sudo mv pima_server.py pima.py key.pem cert.pem /usr/lib/pima
    sudo chown root:root /usr/lib/pima/*
+   sudo pip3 install crcmod paho-mqtt pyserial
    ```
 1. Create a service configuration file (as root), e.g. `/lib/systemd/system/pima.service`:
    ```INI
