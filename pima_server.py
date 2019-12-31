@@ -247,7 +247,7 @@ def ParseArguments() -> argparse.Namespace:
   arg_parser.add_argument('-z', '--zones', type=int, default=32,
                           choices={32, 96, 144}, help='Alarm supported zones.')
   arg_parser.add_argument('--serialport', default=None,
-                          help='Serial port.  Example: /dev/serial0 if connected directly through GPIO serial.')
+                          help='Serial port, e.g. /dev/serial0. Needed if connected directly through GPIO serial.')
   arg_parser.add_argument('--pima_host', default=None,
                           help='Pima alarm hostname or IP address. if connected by ethernet.')
   arg_parser.add_argument('--pima_port', type=int, default=None,
