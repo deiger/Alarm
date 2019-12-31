@@ -66,6 +66,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
      Consider generating a random key using `uuid -v4`.
    - `--login` or `-l` - The technician login code to the alarm.
    - `--zones` or `-z` - Number of zones supported by the alarm, one of 32, 96 or 144. Default is 32.
+   - `--serialport` - Serial port, e.g. `/dev/serial0`. Needed if connected directly through GPIO serial.
    - `--pima_host` - Pima alarm hostname or IP address. Must be set if connected by ethernet.
    - `--pima_port` - Pima alarm port. Must be set if connected by ethernet.
    - `--mqtt_host` - The MQTT broker hostname or IP address. Must be set to enable MQTT.
@@ -93,6 +94,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    sudo mkdir /usr/lib/pima
    sudo mv pima_server.py pima.py key.pem cert.pem /usr/lib/pima
    sudo chown root:root /usr/lib/pima/*
+   sudo pip3 install crcmod paho-mqtt pyserial
    ```
 1. Create a service configuration file (as root), e.g. `/lib/systemd/system/pima.service`:
    ```INI
