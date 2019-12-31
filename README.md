@@ -67,8 +67,8 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    - `--login` or `-l` - The technician login code to the alarm.
    - `--zones` or `-z` - Number of zones supported by the alarm, one of 32, 96 or 144. Default is 32.
    - `--serialport` - Serial port.  Example: /dev/serial0 if connected directly through GPIO serial.
-   - `--pima_host` - Pima alarm hostname or IP address. Musft be set if connected by ethernet.
-   - `--pima_port` - Pima alarm port. Musft be set if connected by ethernet.
+   - `--pima_host` - Pima alarm hostname or IP address. Must be set if connected by ethernet.
+   - `--pima_port` - Pima alarm port. Must be set if connected by ethernet.
    - `--mqtt_host` - The MQTT broker hostname or IP address. Must be set to enable MQTT.
    - `--mqtt_port` - The MQTT broker port. Default is 1883.
    - `--mqtt_client_id` - The MQTT client ID. If not set, a random client ID will be generated.
