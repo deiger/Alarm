@@ -123,6 +123,7 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    ```
 1. If you use [MQTT](http://en.wikipedia.org/wiki/Mqtt) for [HomeAssistant](https://www.home-assistant.io/) or
    [openHAB](https://www.openhab.org/), the broker should now provide the updated status of the alarm, and accepts commands.
+   Basic yaml config files for HomeAssistant are available under the [hass](hass/) directory. 
 ## Next steps
 1. [Groovy](http://groovy-lang.org/) [Device Type Handlers](https://docs.smartthings.com/en/latest/device-type-developers-guide/) for [SmartThings](https://www.smartthings.com/) integration.
 1. Support further functionality, e.g. change user codes.
