@@ -1,0 +1,14 @@
+cards:
+  - entity: alarm_control_panel.mqtt_alarm
+    name: PIMA Alarm
+    states:
+      - arm_home
+      - arm_away
+    type: alarm-panel
+  - entities:
+      - entity: sensor.alarm_arm_state
+      - entity: sensor.alarm_open_zones
+      - entity: sensor.alarm_alarmed_zones
+    show_header_toggle: false
+    type: entities
+type: vertical-stack
