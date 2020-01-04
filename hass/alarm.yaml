@@ -1,30 +1,19 @@
 # Pima Alarm
-switch:
+alarm_control_panel:
+  - platform: manual
   - platform: mqtt
-    name: "Alarm - Arm Home 1"
-    command_topic: "pima_alarm/command"
-    payload_on: '{"command": "arm", "mode": "home1"}'
-    payload_off: '{"command": "arm", "mode": "disarm"}'
     state_topic: "pima_alarm/status"
-    state_on: 'ON'
-    state_off: 'OFF'
-    value_template: >-
-      {% if eq(value_json['partitions']['1'], 'home1') %}
-        ON
-      {% else %}
-        OFF
-      {% endif %}
-  - platform: mqtt
-    name: "Alarm - Full Arm"
     command_topic: "pima_alarm/command"
-    payload_on: '{"command": "arm", "mode": "full_arm"}'
-    payload_off: '{"command": "arm", "mode": "disarm"}'
-    state_topic: "pima_alarm/status"
-    state_on: 'ON'
-    state_off: 'OFF'
+    code_arm_required: false
+    code_disarm_required: false
     value_template: >-
-      {% if eq(value_json['partitions']['1'], 'full_arm') %}
-        ON
+      {% if value_json['partitions']['1'] == 'home1' %}
+        armed_home
+      {% elif value_json['partitions']['1'] == 'full_arm' %}
+        armed_away
       {% else %}
-        OFF
+        disarmed
       {% endif %}
+    payload_disarm: '{"command": "arm", "mode": "disarm"}'
+    payload_arm_home: '{"command": "arm", "mode": "home1"}'
+    payload_arm_away: '{"command": "arm", "mode": "full_arm"}'
