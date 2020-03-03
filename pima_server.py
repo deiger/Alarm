@@ -32,6 +32,7 @@ import logging.handlers
 import re
 import os
 import paho.mqtt.client as mqtt
+import socket
 import ssl
 import sys
 import threading
@@ -295,7 +296,14 @@ if __name__ == '__main__':
     _mqtt_client.on_message = mqtt_on_message
     if _parsed_args.mqtt_user:
       _mqtt_client.username_pw_set(*_parsed_args.mqtt_user.split(':',1))
-    _mqtt_client.connect(_parsed_args.mqtt_host, _parsed_args.mqtt_port)
+    while True:
+      try:
+        _mqtt_client.connect(_parsed_args.mqtt_host, _parsed_args.mqtt_port)
+      except socket.timeout:
+        logging.exception('Failed to connect to MQTT broker. Retrying in 5 seconds...')
+        time.sleep(5)
+      else:
+        break
     _mqtt_client.loop_start()
 
   httpd = HTTPServer(('', _parsed_args.port), HTTPRequestHandler)
