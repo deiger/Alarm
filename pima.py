@@ -41,6 +41,11 @@ class Error(Exception):
   pass
 
 
+class GarbageInputError(Error):
+  """Error class when PIMA alarm reports garbage."""
+  pass
+
+
 class Arm(enum.Enum):
   """Arming mode for the PIMA alarm."""
   FULL_ARM = b'\x01'
@@ -165,7 +170,7 @@ class Alarm(object):
     """Returns the current alarm status."""
     try:
       response = self._read_message()
-    except Error as ex:
+    except GarbageInputError as ex:
       logging.info('Exception: %r.', ex)
       # Clear up a messy channel (sometime happens on startup).
       d = b'\xf3'
@@ -253,7 +258,7 @@ class Alarm(object):
     length = ord(data)
     data = bytes([length]) + self._channel.read(length + 2)
     if data == bytes([length]) * len(data):
-      raise Error('Garbage ({})!'.format(length))
+      raise GarbageInputError('Garbage ({})!'.format(length))
     if len(data) != length + 3:
       raise Error('Not enough data in channel: {} should have {} bytes.'.format(
           self._make_hex(data), length + 3))
