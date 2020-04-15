@@ -139,6 +139,8 @@ def RunJsonCommand(query: dict) -> dict:
       mode = query['mode']
       if isinstance(mode, list):
         mode = mode[0]
+      if _parsed_args.disable_disarm and mode == 'disarm':
+        return {'error' : 'Disarm is disabled'}
       mode = pima.Arm[mode.upper()]
     except KeyError:
       return {'error': 'Invalid arm mode.'}
@@ -263,6 +265,8 @@ def ParseArguments() -> argparse.Namespace:
                           help='<user:password> for the MQTT channel.')
   arg_parser.add_argument('--mqtt_topic', default='pima_alarm',
                           help='MQTT topic.')
+  arg_parser.add_argument('--disable_disarm', action='store_true',
+                          help='Prevent disarming (arm only mode).')
   arg_parser.add_argument('--log_level', default='WARNING',
                           choices={'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'},
                           help='Minimal log level.')
