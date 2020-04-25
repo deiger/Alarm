@@ -39,6 +39,7 @@ import threading
 import time
 import typing
 from urllib.parse import parse_qs, urlparse, ParseResult
+import _thread
 
 import pima
 
@@ -91,14 +92,18 @@ class AlarmServer(threading.Thread):
 
   def run(self) -> None:
     """Continuously query the alarm for status."""
-    while True:
-      with self._alarm_lock:
-        status = self._alarm.get_status()  # type: pima.Status
-        while not status['logged in']:
-          # Re-login if previous session ended.
-          status = self._alarm.login(_parsed_args.login)
-        self._set_status(status)
-      time.sleep(1)
+    try:
+      while True:
+        with self._alarm_lock:
+          status = self._alarm.get_status()  # type: pima.Status
+          while not status['logged in']:
+            # Re-login if previous session ended.
+            status = self._alarm.login(_parsed_args.login)
+          self._set_status(status)
+        time.sleep(1)
+    except:
+      logging.exception('Exception raised by Alarm:')
+      _thread.interrupt_main()
 
   def get_status(self) -> pima.Status:
     """Gets the internally stored alarm status."""
