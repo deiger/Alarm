@@ -46,8 +46,11 @@ import pima
 
 class AlarmServer(threading.Thread):
   """Class maintaining the current status and sends commands to the alarm."""
+
   _SERIAL_BASE = '/dev/serial/by-path'
+
   def __init__(self) -> None:
+    self._alarm: pima.Alarm = None
     ipaddr: str = None
     ipport: int = None
     serialport: str = None
@@ -72,16 +75,12 @@ class AlarmServer(threading.Thread):
         sys.exit(1)
       serialport = os.path.join(self._SERIAL_BASE, ports[0])
       logging.debug('Port: %s.', serialport)
+    self._alarm_args = _parsed_args.zones, serialport, ipaddr, ipport  # type: tuple
     try:
-      self._alarm = pima.Alarm(_parsed_args.zones, serialport, ipaddr, ipport)  # type: pima.Alarm
+      self._create_alarm()
     except pima.Error:
-      logging.exception('Failed to create alarm class.')
+      logging.exception('Failed to create alarm object.')
       sys.exit(1)
-    self._status = self._alarm.get_status()  # type: pima.Status
-    logging.info('Status: %s.', self._status)
-    while not self._status['logged in']:
-      self._status = self._alarm.login(_parsed_args.login)
-      logging.info('Status: %s.', self._status)
     self._status_lock = threading.Lock()
     self._alarm_lock = threading.Lock()
     super(AlarmServer, self).__init__(name='PIMA Alarm Server')
@@ -92,8 +91,8 @@ class AlarmServer(threading.Thread):
 
   def run(self) -> None:
     """Continuously query the alarm for status."""
-    try:
-      while True:
+    while True:
+      try:
         with self._alarm_lock:
           status = self._alarm.get_status()  # type: pima.Status
           while not status['logged in']:
@@ -101,9 +100,14 @@ class AlarmServer(threading.Thread):
             status = self._alarm.login(_parsed_args.login)
           self._set_status(status)
         time.sleep(1)
-    except:
-      logging.exception('Exception raised by Alarm:')
-      _thread.interrupt_main()
+      except:
+        logging.exception('Exception raised by Alarm.')
+        try:
+          with self._alarm_lock:
+            self._create_alarm()
+        except pima.Error:
+          logging.exception('Failed to recreate alarm object.')
+          _thread.interrupt_main()
 
   def get_status(self) -> pima.Status:
     """Gets the internally stored alarm status."""
@@ -124,6 +128,14 @@ class AlarmServer(threading.Thread):
       self._status = status
     logging.info('Status: %s.', self._status)
     mqtt_publish_status(status)
+
+  def _create_alarm(self) -> None:
+    self._alarm = pima.Alarm(*self._alarm_args)  # type: pima.Alarm
+    self._status = self._alarm.get_status()  # type: pima.Status
+    logging.info('Status: %s.', self._status)
+    while not self._status['logged in']:
+      self._status = self._alarm.login(_parsed_args.login)
+      logging.info('Status: %s.', self._status)
 
 
 def RunJsonCommand(query: dict) -> dict:
