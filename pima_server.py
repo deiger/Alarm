@@ -316,7 +316,7 @@ if __name__ == '__main__':
     while True:
       try:
         _mqtt_client.connect(_parsed_args.mqtt_host, _parsed_args.mqtt_port)
-      except socket.timeout:
+      except (socket.timeout, OSError):
         logging.exception('Failed to connect to MQTT broker. Retrying in 5 seconds...')
         time.sleep(5)
       else:
