@@ -104,9 +104,10 @@ class AlarmServer(threading.Thread):
         logging.exception('Exception raised by Alarm.')
         try:
           with self._alarm_lock:
+            logging.info('Trying to create the Alarm anew.')
             self._create_alarm()
         except pima.Error:
-          logging.exception('Failed to recreate alarm object.')
+          logging.exception('Failed to recreate Alarm object. Exit for a clean restart.')
           _thread.interrupt_main()
 
   def get_status(self) -> pima.Status:
