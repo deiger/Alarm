@@ -314,6 +314,7 @@ if __name__ == '__main__':
     _mqtt_client.on_message = mqtt_on_message
     if _parsed_args.mqtt_user:
       _mqtt_client.username_pw_set(*_parsed_args.mqtt_user.split(':',1))
+    _mqtt_client.will_set(_mqtt_topics['pub'], payload=to_json({'offline': True}), qos=1)
     while True:
       try:
         _mqtt_client.connect(_parsed_args.mqtt_host, _parsed_args.mqtt_port)
