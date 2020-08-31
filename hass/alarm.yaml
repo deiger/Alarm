@@ -1,9 +1,9 @@
 # Pima Alarm
 alarm_control_panel:
-  - platform: manual
   - platform: mqtt
     state_topic: "pima_alarm/status"
     command_topic: "pima_alarm/command"
+    availability_topic: "pima_alarm/LWT"
     code_arm_required: false
     code_disarm_required: false
     value_template: >-
