@@ -238,6 +238,11 @@ def mqtt_publish_status(status: dict) -> None:
     _mqtt_client.publish(_mqtt_topics['pub'], payload=to_json(status))
 
 
+def mqtt_publish_lwt_online() -> None:
+  if _mqtt_client:
+    _mqtt_client.publish(_mqtt_topics['lwt'], payload='online', retain=True)
+
+
 class LoginCodes(object):
   """'Container' for all valid login codes."""
   def __contains__(self, value) -> bool:
@@ -308,13 +313,14 @@ if __name__ == '__main__':
   if _parsed_args.mqtt_host:
     _mqtt_topics['pub'] = os.path.join(_parsed_args.mqtt_topic, 'status')
     _mqtt_topics['sub'] = os.path.join(_parsed_args.mqtt_topic, 'command')
+    _mqtt_topics['lwt'] = os.path.join(_parsed_args.mqtt_topic, 'LWT')
     _mqtt_client = mqtt.Client(client_id=_parsed_args.mqtt_client_id,
                                clean_session=True)
     _mqtt_client.on_connect = mqtt_on_connect
     _mqtt_client.on_message = mqtt_on_message
     if _parsed_args.mqtt_user:
       _mqtt_client.username_pw_set(*_parsed_args.mqtt_user.split(':',1))
-    _mqtt_client.will_set(_mqtt_topics['pub'], payload=to_json({'offline': True}), qos=1)
+    _mqtt_client.will_set(_mqtt_topics['lwt'], payload='offline', retain=True)
     while True:
       try:
         _mqtt_client.connect(_parsed_args.mqtt_host, _parsed_args.mqtt_port)
@@ -323,6 +329,7 @@ if __name__ == '__main__':
         time.sleep(5)
       else:
         break
+    mqtt_publish_lwt_online()
     _mqtt_client.loop_start()
 
   httpd = HTTPServer(('', _parsed_args.port), HTTPRequestHandler)
