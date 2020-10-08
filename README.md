@@ -11,6 +11,9 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
 1. PIMA Home Automation kit&trade; (`SA-232`, `LCL-11A` and Serial-to-USB cable), or `net4pro` ethernet connection.
    Diagram by PIMA&trade; &copy;:
    ![Diagram by PIMA&trade; &copy;](home_automation_kit.png)
+   - According to various users, the alarm can be alternatively connected using a `PL2303TA` USB-to-TTL cable, like [this one](https://www.aliexpress.com/item/32345829369.html).
+   - Yet another option is to connect directly to Raspberry pi, as specified here:
+   ![Diagram by @maorcc](rpi_connection.png)
 1. Raspberry Pi or similar, connected to the alarm through the Home Automation kit.
    - Tested on [Raspbian](https://www.raspberrypi.org/downloads/raspbian/). Other operating systems
      may use different path structure for the serial ports.
