@@ -94,7 +94,7 @@ def pima_post_arm_handler():
             else:
                 result = manager.execute(CMD_ARM, data)
 
-                error = result.get("result")
+                error = result.get("error")
 
                 if error is None:
                     content = jsonify(result)
