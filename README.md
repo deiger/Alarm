@@ -136,8 +136,14 @@ Code | Reason | Description
 200 | OK | Set arm state changed successfully
 400 | Invalid request data | Empty payload sent within the request
 401 | Unauthorized request | api_key doesn't match to the defined key
+403 | More details below | The request contained valid data and was understood by the server, but the server is refusing action, more details available in the error message and logs
 501 | Invalid arm mode, must be one of `full_arm`, `home1`, `home2`, `disarm` | received mode is not supported
 
+##### Status Code 403 available errors 
+Message | Description
+| --- | --- |
+No Server | Server is unreachable, check if serial port / IP:Port are correct
+Invalid arm mode [mode] | provided mode is not supported
 
 ## Next steps
 1. [Groovy](http://groovy-lang.org/) [Device Type Handlers](https://docs.smartthings.com/en/latest/device-type-developers-guide/) for [SmartThings](https://www.smartthings.com/) integration.

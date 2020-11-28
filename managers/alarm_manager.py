@@ -124,6 +124,11 @@ class AlarmManager(threading.Thread):
 
         result = self.execute(CMD_ARM, data)
 
+        error = result.get("error")
+
+        if error is not None:
+            _LOGGER.error(f"Failed to run arm, Error: {error}, data: {data}")
+
         self._mqtt_manager.publish_status(result)
 
     def execute(self, command: str, data: Optional[dict] = None):
@@ -170,13 +175,6 @@ class AlarmManager(threading.Thread):
 
             if not handled:
                 message["error"] = f"Invalid command"
-
-            error = message.get("error")
-
-            if error is not None:
-                _LOGGER.error(
-                    f"Failed to run command [{command}], Error: {error}, data: {data}"
-                )
 
         except Exception as ex:
             _LOGGER.error(f"Failed to run command due to error: {ex}, data: {data}")

@@ -94,9 +94,17 @@ def pima_post_arm_handler():
             else:
                 result = manager.execute(CMD_ARM, data)
 
-                content = jsonify(result)
+                error = result.get("result")
 
-                return content
+                if error is None:
+                    content = jsonify(result)
+
+                    return content
+
+                else:
+                    _LOGGER.error(f"{error}")
+
+                    abort(403, f"{error}")
 
         else:
             _LOGGER.error(f"Invalid request data")
