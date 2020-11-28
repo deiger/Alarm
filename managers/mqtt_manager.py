@@ -2,8 +2,10 @@ from typing import Optional
 from paho.mqtt.client import Client, MQTTMessage
 from os import path
 
+from helpers.const import CMD_STATUS, CMD_ARM
 from helpers.json_helper import to_json
 from managers.configuration_manager import ConfigurationManager
+
 import socket
 import logging
 from time import sleep
@@ -52,8 +54,8 @@ class MQTTManager:
 
     def connect(self):
         if self._configuration_manager.mqtt_host:
-            self._topic_publish = self._get_topic('status')
-            self._topic_subscribe = self._get_topic('command')
+            self._topic_publish = self._get_topic(CMD_STATUS)
+            self._topic_subscribe = self._get_topic(CMD_ARM)
             self._topic_lwt = self._get_topic('LWT')
 
             self._mqtt_client = Client(client_id=self._configuration_manager.mqtt_client_id,

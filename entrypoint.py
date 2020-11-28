@@ -58,11 +58,7 @@ def pima_get_status_handler():
     is_valid_request = validate_key(key)
 
     if is_valid_request:
-        data = {
-            "command": CMD_STATUS
-        }
-
-        result = manager.execute(data)
+        result = manager.execute(CMD_STATUS)
 
         content = jsonify(result)
 
@@ -82,17 +78,16 @@ def pima_post_arm_handler():
     if is_valid_request:
         if request.data:
             data = request.get_json(force=True)
-            data["command"] = CMD_ARM
 
             arm_mode = data.get(ARM_MODE)
 
             if arm_mode is None or arm_mode not in SUPPORTED_ARM_MODES:
                 _LOGGER.error(f"Invalid arm mode, must be one of {SUPPORTED_ARM_MODES}")
 
-                abort(400, f"Invalid arm mode, must be one of {SUPPORTED_ARM_MODES}")
+                abort(501, f"Invalid arm mode, must be one of {SUPPORTED_ARM_MODES}")
 
             else:
-                result = manager.execute(data)
+                result = manager.execute(CMD_ARM, data)
 
                 content = jsonify(result)
 

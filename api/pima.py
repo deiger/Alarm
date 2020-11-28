@@ -267,7 +267,7 @@ class Alarm(object):
                 self._make_hex(data), length + 3))
         logging.debug('>>> ' + self._make_hex(data))
         data, crc = data[:-2], int.from_bytes(data[-2:], byteorder='big')
-        if (crc != self._crc(data)):
+        if crc != self._crc(data):
             raise Error('Invalid input on channel, CRC for {} is {}, not {}!'.format(
                 self._make_hex(data), self._crc(data), crc))
         if self._module_id != data[1:2]:

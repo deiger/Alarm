@@ -112,18 +112,17 @@ class AlarmManager(threading.Thread):
 
     def _callback(self, payload: bytes):
         payload_str = payload.decode('utf-8')
-        query = json.loads(payload_str)
+        data = json.loads(payload_str)
 
-        result = self.execute(query)
+        result = self.execute(CMD_ARM, data)
 
         self._mqtt_manager.publish_status(result)
 
-    def execute(self, data):
+    def execute(self, command: str, data: Optional[dict] = None):
         message = {}
 
         try:
             handled = False
-            command = data.get('command')
 
             if command is None:
                 message['error'] = 'Missing command'
