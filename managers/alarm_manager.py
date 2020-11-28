@@ -1,15 +1,14 @@
-import _thread
-import json
 from http.server import HTTPServer
-
-from api import pima
+import json
 import logging
-from typing import Optional
 import threading
 from time import sleep
+from typing import Optional
 
-from managers.configuration_manager import ConfigurationManager
+import _thread
+from api import pima
 from helpers.const import CMD_ARM, CMD_STATUS
+from managers.configuration_manager import ConfigurationManager
 from managers.mqtt_manager import MQTTManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,8 +16,11 @@ _LOGGER = logging.getLogger(__name__)
 
 class AlarmManager(threading.Thread):
     """Class maintaining the current status and sends commands to the alarm."""
+
     def __init__(self, configuration_manager: ConfigurationManager) -> None:
-        self._mqtt_manager: MQTTManager = MQTTManager(configuration_manager, self._callback)
+        self._mqtt_manager: MQTTManager = MQTTManager(
+            configuration_manager, self._callback
+        )
         self._alarm: Optional[pima.Alarm] = None
         self._httpd: Optional[HTTPServer] = None
         self._configuration_manager = configuration_manager
@@ -28,7 +30,7 @@ class AlarmManager(threading.Thread):
         self._status = None
         self._is_ready = False
 
-        super(AlarmManager, self).__init__(name='PIMA Alarm Server')
+        super().__init__(name="PIMA Alarm Server")
 
     def initialize(self):
         try:
@@ -40,7 +42,7 @@ class AlarmManager(threading.Thread):
 
                 self._is_ready = True
         except pima.Error:
-            _LOGGER.exception('Failed to create alarm object.')
+            _LOGGER.exception("Failed to create alarm object.")
 
     def __del__(self) -> None:
         if self._alarm:
@@ -52,22 +54,26 @@ class AlarmManager(threading.Thread):
             try:
                 with self._alarm_lock:
                     status = self._alarm.get_status()  # type: pima.Status
-                    while not status['logged in']:
+                    while not status["logged in"]:
                         # Re-login if previous session ended.
-                        status = self._alarm.login(self._configuration_manager.pima_login)
+                        status = self._alarm.login(
+                            self._configuration_manager.pima_login
+                        )
 
                     self._set_status(status)
                 sleep(1)
 
             except Exception as ex:
-                logging.exception(f'Exception raised by Alarm, Error: {ex}')
+                logging.exception(f"Exception raised by Alarm, Error: {ex}")
                 try:
                     with self._alarm_lock:
-                        _LOGGER.info('Trying to create the Alarm anew.')
+                        _LOGGER.info("Trying to create the Alarm anew.")
                         self._create_alarm()
 
                 except pima.Error:
-                    _LOGGER.exception('Failed to recreate Alarm object. Exit for a clean restart.')
+                    _LOGGER.exception(
+                        "Failed to recreate Alarm object. Exit for a clean restart."
+                    )
                     _thread.interrupt_main()
 
     def get_status(self) -> pima.Status:
@@ -96,22 +102,24 @@ class AlarmManager(threading.Thread):
     def _create_alarm(self) -> None:
         configuration_manager = self._configuration_manager
 
-        self._alarm = pima.Alarm(configuration_manager.pima_zones,
-                                 configuration_manager.pima_serial_port,
-                                 configuration_manager.pima_host,
-                                 configuration_manager.pima_port)  # type: pima.Alarm
+        self._alarm = pima.Alarm(
+            configuration_manager.pima_zones,
+            configuration_manager.pima_serial_port,
+            configuration_manager.pima_host,
+            configuration_manager.pima_port,
+        )  # type: pima.Alarm
 
         self._status = self._alarm.get_status()  # type: pima.Status
 
         _LOGGER.info(f"Status: {self._status}.")
 
-        while not self._status['logged in']:
+        while not self._status["logged in"]:
             self._status = self._alarm.login(self._configuration_manager.pima_login)
 
             _LOGGER.info(f"Status: {self._status}.")
 
     def _callback(self, payload: bytes):
-        payload_str = payload.decode('utf-8')
+        payload_str = payload.decode("utf-8")
         data = json.loads(payload_str)
 
         result = self.execute(CMD_ARM, data)
@@ -125,7 +133,7 @@ class AlarmManager(threading.Thread):
             handled = False
 
             if command is None:
-                message['error'] = 'Missing command'
+                message["error"] = "Missing command"
 
                 handled = True
             else:
@@ -133,7 +141,7 @@ class AlarmManager(threading.Thread):
                     command = command[0]
 
             if not self._is_ready:
-                message['error'] = 'No Server'
+                message["error"] = "No Server"
                 handled = True
 
             if not handled and command == CMD_STATUS:
@@ -141,7 +149,7 @@ class AlarmManager(threading.Thread):
                 handled = True
 
             if not handled and command == CMD_ARM:
-                mode = data.get('mode')
+                mode = data.get("mode")
 
                 try:
                     if isinstance(mode, list):
@@ -150,22 +158,25 @@ class AlarmManager(threading.Thread):
                     mode = pima.Arm[mode.upper()]
 
                     partitions = pima.Partitions(
-                        {int(p) for p in data.get('partitions', ['1'])})
+                        {int(p) for p in data.get("partitions", ["1"])}
+                    )
 
                     message = self.arm(mode, partitions)
 
                 except KeyError:
-                    message['error'] = f"Invalid arm mode [{mode}]"
+                    message["error"] = f"Invalid arm mode [{mode}]"
 
                 handled = True
 
             if not handled:
-                message['error'] = f"Invalid command"
+                message["error"] = f"Invalid command"
 
             error = message.get("error")
 
             if error is not None:
-                _LOGGER.error(f"Failed to run command [{command}], Error: {error}, data: {data}")
+                _LOGGER.error(
+                    f"Failed to run command [{command}], Error: {error}, data: {data}"
+                )
 
         except Exception as ex:
             _LOGGER.error(f"Failed to run command due to error: {ex}, data: {data}")

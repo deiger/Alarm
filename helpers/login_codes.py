@@ -1,13 +1,13 @@
 import re
 
 
-class LoginCodes(object):
+class LoginCodes:
     """'Container' for all valid login codes."""
 
     def __contains__(self, value) -> bool:
         if not isinstance(value, str):
             return False
-        return bool(re.fullmatch(r'\d{4,6}', value))
+        return bool(re.fullmatch(r"\d{4,6}", value))
 
     def __iter__(self):
-        yield '000000'
+        yield "000000"

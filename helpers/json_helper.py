@@ -13,4 +13,4 @@ class JsonEncoder(json.JSONEncoder):
 
 def to_json(data: dict) -> bytes:
     """Encode the provided dictionary as JSON."""
-    return bytes(json.dumps(data, cls=JsonEncoder), 'utf-8')
+    return bytes(json.dumps(data, cls=JsonEncoder), "utf-8")

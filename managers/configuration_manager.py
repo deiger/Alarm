@@ -1,7 +1,7 @@
-import logging
 import argparse
+import logging
 import os
-from typing import Optional, List
+from typing import List, Optional
 
 from helpers.const import *
 
@@ -51,7 +51,7 @@ class ConfigurationManager:
             self.mqtt_topic = args.mqtt_topic
             self.log_level = args.log_level
 
-            mqtt_user_parts = args.mqtt_user.split(':', 1)
+            mqtt_user_parts = args.mqtt_user.split(":", 1)
             if len(mqtt_user_parts) > 1:
                 self.mqtt_username = mqtt_user_parts[0]
                 self.mqtt_password = mqtt_user_parts[0]
@@ -74,7 +74,9 @@ class ConfigurationManager:
             self.mqtt_topic = os.getenv("MQTT_TOPIC", "pima_alarm")
             self.log_level = os.getenv("LOG_LEVEL", LOG_LEVEL_INFO)
 
-        self.is_ssl = self._has_valid_content(self.api_ssl_key) and self._has_valid_content(self.api_ssl_cert)
+        self.is_ssl = self._has_valid_content(
+            self.api_ssl_key
+        ) and self._has_valid_content(self.api_ssl_cert)
         self.ssl_context = None
         self.is_debug = self.log_level == "DEBUG"
 
@@ -108,39 +110,41 @@ class ConfigurationManager:
                     _LOGGER.debug(f"Port: {self.pima_serial_port}.")
 
                 else:
-                    _LOGGER.error('Serial port is missing!')
+                    _LOGGER.error("Serial port is missing!")
 
-            except IOError:
-                _LOGGER.exception('Failed to lookup serial port.')
+            except OSError:
+                _LOGGER.exception("Failed to lookup serial port.")
 
     @staticmethod
     def get_args() -> argparse.Namespace:
         """Parse command line arguments."""
         arg_parser = argparse.ArgumentParser(
-            description='JSON server for PIMA alarms.',
-            allow_abbrev=False)
+            description="JSON server for PIMA alarms.", allow_abbrev=False
+        )
 
         for item in ARGS:
             short_key = item.get(ARG_SHORT_KEY)
 
             if short_key is None:
-                arg_parser.add_argument(f"--{item.get(ARG_KEY)}",
-                                        help=item.get(ARG_HELP),
-                                        default=item.get(ARG_DEFAULT),
-                                        required=item.get(ARG_REQUIRED, False),
-                                        type=item.get(ARG_TYPE),
-                                        choices=item.get(ARG_CHOICES)
-                                        )
+                arg_parser.add_argument(
+                    f"--{item.get(ARG_KEY)}",
+                    help=item.get(ARG_HELP),
+                    default=item.get(ARG_DEFAULT),
+                    required=item.get(ARG_REQUIRED, False),
+                    type=item.get(ARG_TYPE),
+                    choices=item.get(ARG_CHOICES),
+                )
 
             else:
-                arg_parser.add_argument(f"-{short_key}",
-                                        f"--{item.get(ARG_KEY)}",
-                                        help=item.get(ARG_HELP),
-                                        default=item.get(ARG_DEFAULT),
-                                        required=item.get(ARG_REQUIRED, False),
-                                        type=item.get(ARG_TYPE),
-                                        choices=item.get(ARG_CHOICES)
-                                        )
+                arg_parser.add_argument(
+                    f"-{short_key}",
+                    f"--{item.get(ARG_KEY)}",
+                    help=item.get(ARG_HELP),
+                    default=item.get(ARG_DEFAULT),
+                    required=item.get(ARG_REQUIRED, False),
+                    type=item.get(ARG_TYPE),
+                    choices=item.get(ARG_CHOICES),
+                )
 
         parsed_args = arg_parser.parse_args()
 

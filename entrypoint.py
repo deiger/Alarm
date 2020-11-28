@@ -22,15 +22,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-__author__ = 'droreiger@gmail.com (Dror Eiger)'
+__author__ = "droreiger@gmail.com (Dror Eiger)"
 
 import logging
-from managers.alarm_manager import AlarmManager
-from flask import Flask, request, abort, jsonify
 from threading import Thread
 
+from flask import Flask, abort, jsonify, request
+from helpers.const import (
+    ARM_MODE,
+    CMD_ARM,
+    CMD_STATUS,
+    PIMA_ARM_URL,
+    PIMA_STATUS_URL,
+    SUPPORTED_ARM_MODES,
+)
+from managers.alarm_manager import AlarmManager
 from managers.configuration_manager import ConfigurationManager
-from helpers.const import PIMA_URL, CMD_STATUS, PIMA_STATUS_URL, PIMA_ARM_URL, CMD_ARM, ARM_MODE, SUPPORTED_ARM_MODES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,8 +49,8 @@ initialize_thread = Thread(target=manager.initialize)
 initialize_thread.start()
 
 
-def validate_key(key):
-    key = request.args.get('api_key')
+def validate_key():
+    key = request.args.get("api_key")
     is_valid = key == configuration_manager.api_key
 
     if not is_valid:
@@ -52,10 +59,9 @@ def validate_key(key):
     return is_valid
 
 
-@app.route(PIMA_STATUS_URL, methods=['GET'])
+@app.route(PIMA_STATUS_URL, methods=["GET"])
 def pima_get_status_handler():
-    key = request.args.get('api_key')
-    is_valid_request = validate_key(key)
+    is_valid_request = validate_key()
 
     if is_valid_request:
         result = manager.execute(CMD_STATUS)
@@ -70,10 +76,9 @@ def pima_get_status_handler():
         abort(401, description="Unauthorized request")
 
 
-@app.route(PIMA_ARM_URL, methods=['POST'])
+@app.route(PIMA_ARM_URL, methods=["POST"])
 def pima_post_arm_handler():
-    key = request.args.get('api_key')
-    is_valid_request = validate_key(key)
+    is_valid_request = validate_key()
 
     if is_valid_request:
         if request.data:
@@ -104,7 +109,9 @@ def pima_post_arm_handler():
         abort(401, description="Unauthorized request")
 
 
-app.run(host=configuration_manager.api_binds,
-        port=configuration_manager.api_port,
-        debug=configuration_manager.is_debug,
-        ssl_context=configuration_manager.ssl_context)
+app.run(
+    host=configuration_manager.api_binds,
+    port=configuration_manager.api_port,
+    debug=configuration_manager.is_debug,
+    ssl_context=configuration_manager.ssl_context,
+)

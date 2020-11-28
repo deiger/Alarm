@@ -1,14 +1,13 @@
-from typing import Optional
-from paho.mqtt.client import Client, MQTTMessage
+import logging
 from os import path
+import socket
+from time import sleep
+from typing import Optional
 
-from helpers.const import CMD_STATUS, CMD_ARM
+from helpers.const import CMD_ARM, CMD_STATUS
 from helpers.json_helper import to_json
 from managers.configuration_manager import ConfigurationManager
-
-import socket
-import logging
-from time import sleep
+from paho.mqtt.client import Client, MQTTMessage
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,29 +55,39 @@ class MQTTManager:
         if self._configuration_manager.mqtt_host:
             self._topic_publish = self._get_topic(CMD_STATUS)
             self._topic_subscribe = self._get_topic(CMD_ARM)
-            self._topic_lwt = self._get_topic('LWT')
+            self._topic_lwt = self._get_topic("LWT")
 
-            self._mqtt_client = Client(client_id=self._configuration_manager.mqtt_client_id,
-                                       clean_session=True)
+            self._mqtt_client = Client(
+                client_id=self._configuration_manager.mqtt_client_id, clean_session=True
+            )
 
             self._mqtt_client.on_connect = self._mqtt_on_connect
             self._mqtt_client.on_disconnect = self._mqtt_on_disconnect
             self._mqtt_client.on_message = self._mqtt_on_message
 
-            if self._configuration_manager.mqtt_username and self._configuration_manager.mqtt_password:
-                self._mqtt_client.username_pw_set(self._configuration_manager.mqtt_username,
-                                                  self._configuration_manager.mqtt_password)
+            if (
+                self._configuration_manager.mqtt_username
+                and self._configuration_manager.mqtt_password
+            ):
+                self._mqtt_client.username_pw_set(
+                    self._configuration_manager.mqtt_username,
+                    self._configuration_manager.mqtt_password,
+                )
 
-            self._mqtt_client.will_set(self._topic_lwt, payload='offline', retain=True)
+            self._mqtt_client.will_set(self._topic_lwt, payload="offline", retain=True)
 
             while True:
                 try:
-                    self._mqtt_client.connect(self._configuration_manager.mqtt_host,
-                                              self._configuration_manager.mqtt_port)
+                    self._mqtt_client.connect(
+                        self._configuration_manager.mqtt_host,
+                        self._configuration_manager.mqtt_port,
+                    )
 
                     self._is_ready = True
                 except (socket.timeout, OSError):
-                    _LOGGER.exception('Failed to connect to MQTT broker. Retrying in 5 seconds...')
+                    _LOGGER.exception(
+                        "Failed to connect to MQTT broker. Retrying in 5 seconds..."
+                    )
                     sleep(5)
                 else:
                     break
@@ -92,4 +101,4 @@ class MQTTManager:
 
     def _mqtt_publish_lwt_online(self) -> None:
         if self._is_ready:
-            self._mqtt_client.publish(self._topic_lwt, payload='online', retain=True)
+            self._mqtt_client.publish(self._topic_lwt, payload="online", retain=True)
