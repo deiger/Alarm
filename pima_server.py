@@ -160,14 +160,14 @@ def RunJsonCommand(query: dict) -> dict:
       mode = pima.Arm[mode.upper()]
     except KeyError:
       return {'error': 'Invalid arm mode.'}
-    partitions = pima.Partitions(
-        {int(p) for p in query.get('partitions', ['1'])})
+    partitions = pima.Partitions({int(p) for p in query.get('partitions', ['1'])})
     return _pima_server.arm(mode, partitions)
   return {'error': 'Invalid command.'}
 
 
 class JsonEncoder(json.JSONEncoder):
   """Class for JSON encoding."""
+
   def default(self, obj):
     if isinstance(obj, set):
       return list(obj)
@@ -220,7 +220,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
     """Validate the provided URL."""
     if path != cls._PIMA_URL:
       return False
-    if query.get('key',[''])[0] != _parsed_args.key:
+    if query.get('key', [''])[0] != _parsed_args.key:
       return False
     return True
 
@@ -327,53 +327,61 @@ def mqtt_publish_lwt_online() -> None:
 
 class LoginCodes(object):
   """'Container' for all valid login codes."""
+
   def __contains__(self, value) -> bool:
     if not isinstance(value, str):
       return False
     return bool(re.fullmatch(r'\d{4,6}', value))
+
   def __iter__(self):
     yield '000000'
 
 
 def ParseArguments() -> argparse.Namespace:
   """Parse command line arguments."""
-  arg_parser = argparse.ArgumentParser(
-      description='JSON server for PIMA alarms.',
-      allow_abbrev=False)
-  arg_parser.add_argument('--ssl_cert',
-                          help='Path to SSL certificate file.')
-  arg_parser.add_argument('--ssl_key', default=None,
-                          help='Path to SSL key file.')
-  arg_parser.add_argument('-p', '--port', required=True, type=int,
-                          help='Port for the server.')
-  arg_parser.add_argument('-k', '--key', required=True,
-                          help='URL key to authenticate calls.')
-  arg_parser.add_argument('-l', '--login', required=True, choices=LoginCodes(),
+  arg_parser = argparse.ArgumentParser(description='JSON server for PIMA alarms.',
+                                       allow_abbrev=False)
+  arg_parser.add_argument('--ssl_cert', help='Path to SSL certificate file.')
+  arg_parser.add_argument('--ssl_key', default=None, help='Path to SSL key file.')
+  arg_parser.add_argument('-p', '--port', required=True, type=int, help='Port for the server.')
+  arg_parser.add_argument('-k', '--key', required=True, help='URL key to authenticate calls.')
+  arg_parser.add_argument('-l',
+                          '--login',
+                          required=True,
+                          choices=LoginCodes(),
                           help='Login code to the PIMA alarm.')
-  arg_parser.add_argument('-z', '--zones', type=int, default=32,
-                          choices={32, 96, 144}, help='Alarm supported zones.')
-  arg_parser.add_argument('--serialport', default=None,
-                          help='Serial port, e.g. /dev/serial0. Needed if connected directly through GPIO serial.')
-  arg_parser.add_argument('--pima_host', default=None,
+  arg_parser.add_argument('-z',
+                          '--zones',
+                          type=int,
+                          default=32,
+                          choices={32, 96, 144},
+                          help='Alarm supported zones.')
+  arg_parser.add_argument(
+      '--serialport',
+      default=None,
+      help='Serial port, e.g. /dev/serial0. Needed if connected directly through GPIO serial.')
+  arg_parser.add_argument('--pima_host',
+                          default=None,
                           help='Pima alarm hostname or IP address. if connected by ethernet.')
-  arg_parser.add_argument('--pima_port', type=int, default=None,
+  arg_parser.add_argument('--pima_port',
+                          type=int,
+                          default=None,
                           help='Pima alarm port. if connected by ethernet.')
-  arg_parser.add_argument('--mqtt_host', default=None,
-                          help='MQTT broker hostname or IP address.')
-  arg_parser.add_argument('--mqtt_port', type=int, default=1883,
-                          help='MQTT broker port.')
-  arg_parser.add_argument('--mqtt_client_id', default=None,
-                          help='MQTT client ID.')
-  arg_parser.add_argument('--mqtt_user', default=None,
-                          help='<user:password> for the MQTT channel.')
-  arg_parser.add_argument('--mqtt_topic', default='pima_alarm',
-                          help='MQTT topic.')
-  arg_parser.add_argument('--mqtt_discovery_prefix', default='homeassistant',
+  arg_parser.add_argument('--mqtt_host', default=None, help='MQTT broker hostname or IP address.')
+  arg_parser.add_argument('--mqtt_port', type=int, default=1883, help='MQTT broker port.')
+  arg_parser.add_argument('--mqtt_client_id', default=None, help='MQTT client ID.')
+  arg_parser.add_argument('--mqtt_user', default=None, help='<user:password> for the MQTT channel.')
+  arg_parser.add_argument('--mqtt_topic', default='pima_alarm', help='MQTT topic.')
+  arg_parser.add_argument('--mqtt_discovery_prefix',
+                          default='homeassistant',
                           help='MQTT discovery prefix for HomeAssistant.')
-  arg_parser.add_argument('--mqtt_discovery_max_zone', default=8, type=int,
+  arg_parser.add_argument('--mqtt_discovery_max_zone',
+                          default=8,
+                          type=int,
                           help='The highest number to enable for MQTT discovery ' +
                           '(to avoid adding sensors for inoperative zones).')
-  arg_parser.add_argument('--log_level', default='WARNING',
+  arg_parser.add_argument('--log_level',
+                          default='WARNING',
                           choices={'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'},
                           help='Minimal log level.')
   return arg_parser.parse_args()
@@ -387,7 +395,8 @@ if __name__ == '__main__':
   logging_handler.setFormatter(
       logging.Formatter(fmt='{levelname[0]}{asctime}.{msecs:03.0f}  '
                         '{filename}:{lineno}] {message}',
-                         datefmt='%m%d %H:%M:%S', style='{'))
+                        datefmt='%m%d %H:%M:%S',
+                        style='{'))
   logger = logging.getLogger()
   logger.setLevel(_parsed_args.log_level)
   logger.addHandler(logging_handler)
@@ -403,12 +412,11 @@ if __name__ == '__main__':
     _mqtt_topics['lwt'] = os.path.join(_parsed_args.mqtt_topic, 'LWT')
     _mqtt_topics['discovery'] = os.path.join(_parsed_args.mqtt_discovery_prefix, '{}', 'pima_alarm',
                                              'config')
-    _mqtt_client = mqtt.Client(client_id=_parsed_args.mqtt_client_id,
-                               clean_session=True)
+    _mqtt_client = mqtt.Client(client_id=_parsed_args.mqtt_client_id, clean_session=True)
     _mqtt_client.on_connect = mqtt_on_connect
     _mqtt_client.on_message = mqtt_on_message
     if _parsed_args.mqtt_user:
-      _mqtt_client.username_pw_set(*_parsed_args.mqtt_user.split(':',1))
+      _mqtt_client.username_pw_set(*_parsed_args.mqtt_user.split(':', 1))
     _mqtt_client.will_set(_mqtt_topics['lwt'], payload='offline', retain=True)
     while True:
       try:
@@ -424,7 +432,8 @@ if __name__ == '__main__':
 
   httpd = HTTPServer(('', _parsed_args.port), HTTPRequestHandler)
   if _parsed_args.ssl_cert:
-    httpd.socket = ssl.wrap_socket(httpd.socket, certfile=_parsed_args.ssl_cert,
+    httpd.socket = ssl.wrap_socket(httpd.socket,
+                                   certfile=_parsed_args.ssl_cert,
                                    keyfile=_parsed_args.ssl_key,
                                    server_side=True)
   try:

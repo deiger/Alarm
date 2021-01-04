@@ -49,9 +49,9 @@ class GarbageInputError(Error):
 class Arm(enum.Enum):
   """Arming mode for the PIMA alarm."""
   FULL_ARM = b'\x01'
-  HOME1    = b'\x02'
-  HOME2    = b'\x03'
-  DISARM   = b'\x00'
+  HOME1 = b'\x02'
+  HOME2 = b'\x03'
+  DISARM = b'\x00'
 
 
 Status = typing.NewType('Status', typing.Dict[str, typing.Any])
@@ -62,72 +62,78 @@ class Alarm(object):
   """Class wrapping the protocol for PIMA alarm."""
   _ZONES_TO_MODULE_ID = {32: b'\x0d', 96: b'\x0d', 144: b'\x13'}
   _ZONES_TO_ZONE_BYTES = {32: 12, 96: 12, 144: 18}
+
   class _Message(enum.Enum):
-    WRITE  = b'\x0f'
-    READ   = b'\x0e'
-    OPEN   = b'\x01'
-    CLOSE  = b'\x19'
+    WRITE = b'\x0f'
+    READ = b'\x0e'
+    OPEN = b'\x01'
+    CLOSE = b'\x19'
     STATUS = b'\x05'
+
   class _Channel(enum.Enum):
-    IDLE      = b'\x00'
-    SYSTEM    = b'\x01'
-    ZONES     = b'\x02'
-    OUTPUTS   = b'\x03'
-    LOGIN     = b'\x04'
+    IDLE = b'\x00'
+    SYSTEM = b'\x01'
+    ZONES = b'\x02'
+    OUTPUTS = b'\x03'
+    LOGIN = b'\x04'
     PARAMETER = b'\x05'
+
   _DISCRETE_FAILURES = {
-    1: 'System Low Power',
-    2: 'Unknown (2)',
-    3: 'System Error',
-    4: 'Zone Failure',
-    5: 'Unknown (5)',
-    6: 'Auxiliary Voltage Failure (Fuse short)',
-    7: 'W/L Zone Low Battery',
-    8: 'Wireless Receiver Failure',
-    9: 'Low Battery',
-    10: 'Telephone Line Failure',
-    11: 'MAINS Failure (220V)',
-    12: 'Tamper 1 Open',
-    13: 'Tamper 2 Open',
-    14: 'Clock Not Set',
-    15: 'RAM Error',
-    16: 'Station Commuincation Failure',
-    17: 'Siren 1 Failure',
-    18: 'Siren 2 Failure',
-    19: 'SMS Communication',
-    20: 'SMS Card',
-    21: 'GSM200 Error',
-    22: 'Network Comm. Fault',
-    23: 'Radio Fault',
-    24: 'Keyfob Rec. Fault',
-    25: 'Wireless Receiver Tamper Open',
-    26: 'Wireless Jamming',
-    27: 'GSM-200 Failure',
-    28: 'GSM Communication Failure',
-    29: 'GSM-SIM Failure',
-    30: 'GSM Link Failure',
-    31: 'GSM Comm. Fault 2nd station',
-    32: 'W/L Zone Supervision',
-    33: 'Unknown (33)',
-    34: 'Network fault Station 2',
-    35: 'Net4Pro Fault',
-    36: 'VVR 1 Fault',
-    37: 'VVR 2 Fault',
-    38: 'VVR 3 Fault',
-    39: 'VVR 4 Fault',
-    40: 'VVR 1 Power Fault',
-    41: 'VVR 2 Power Fault',
-    42: 'VVR 3 Power Fault',
-    43: 'VVR 4 Power Fault',
-    44: 'Unknown (44)',
-    45: 'Unknown (45)',
-    46: 'Unknown (46)',
-    47: 'Unknown (47)',
-    48: 'Unknown (48)',
+      1: 'System Low Power',
+      2: 'Unknown (2)',
+      3: 'System Error',
+      4: 'Zone Failure',
+      5: 'Unknown (5)',
+      6: 'Auxiliary Voltage Failure (Fuse short)',
+      7: 'W/L Zone Low Battery',
+      8: 'Wireless Receiver Failure',
+      9: 'Low Battery',
+      10: 'Telephone Line Failure',
+      11: 'MAINS Failure (220V)',
+      12: 'Tamper 1 Open',
+      13: 'Tamper 2 Open',
+      14: 'Clock Not Set',
+      15: 'RAM Error',
+      16: 'Station Commuincation Failure',
+      17: 'Siren 1 Failure',
+      18: 'Siren 2 Failure',
+      19: 'SMS Communication',
+      20: 'SMS Card',
+      21: 'GSM200 Error',
+      22: 'Network Comm. Fault',
+      23: 'Radio Fault',
+      24: 'Keyfob Rec. Fault',
+      25: 'Wireless Receiver Tamper Open',
+      26: 'Wireless Jamming',
+      27: 'GSM-200 Failure',
+      28: 'GSM Communication Failure',
+      29: 'GSM-SIM Failure',
+      30: 'GSM Link Failure',
+      31: 'GSM Comm. Fault 2nd station',
+      32: 'W/L Zone Supervision',
+      33: 'Unknown (33)',
+      34: 'Network fault Station 2',
+      35: 'Net4Pro Fault',
+      36: 'VVR 1 Fault',
+      37: 'VVR 2 Fault',
+      38: 'VVR 3 Fault',
+      39: 'VVR 4 Fault',
+      40: 'VVR 1 Power Fault',
+      41: 'VVR 2 Power Fault',
+      42: 'VVR 3 Power Fault',
+      43: 'VVR 4 Power Fault',
+      44: 'Unknown (44)',
+      45: 'Unknown (45)',
+      46: 'Unknown (46)',
+      47: 'Unknown (47)',
+      48: 'Unknown (48)',
   }
 
-  def __init__(self, zones: int, serialport: str = None,
-               ipaddr: str = None, ipport: int = None) -> None:
+  def __init__(self,
+               zones: int,
+               serialport: str = None,
+               ipaddr: str = None,
+               ipport: int = None) -> None:
     if serialport is not None:
       try:
         self._channel = serial.Serial(port=serialport,
@@ -146,11 +152,10 @@ class Alarm(object):
       except (socket.error, socket.gaierror) as e:
         self._channel = None
         raise Error('Error creating socket.') from e
-    self._crc = crcmod.mkCrcFun(0x18005, rev=True, initCrc=0x0000,
-                                xorOut=0x0000)
+    self._crc = crcmod.mkCrcFun(0x18005, rev=True, initCrc=0x0000, xorOut=0x0000)
     self._zones = zones  # type: int
     self._module_id = self._ZONES_TO_MODULE_ID[self._zones]  # type: bytes
-  
+
   def __del__(self) -> None:
     self._close()
 
@@ -181,7 +186,7 @@ class Alarm(object):
     self._send_message(self._Message.STATUS, self._Channel.IDLE)
     data = Status({'logged in': False})
     if not response:
-        return data
+      return data
     if response[2:3] != self._Message.STATUS.value:
       raise Error('Invalid message {}.'.format(self._make_hex(response[2:3])))
     if response[3:4] == self._Channel.IDLE.value:
@@ -191,8 +196,7 @@ class Alarm(object):
     if response[4:7] != b'\x02\x00\x00':
       raise Error('Invalid address {}.'.format(self._make_hex(response[4:7])))
     # Calculate the break points.
-    zone_bytes = range(7, len(response),
-                       self._ZONES_TO_ZONE_BYTES[self._zones])[:5]
+    zone_bytes = range(7, len(response), self._ZONES_TO_ZONE_BYTES[self._zones])[:5]
     # Get the data chuncks.
     # HP32 zones us using only the first bytes.
     zone_data = [response[i:i + self._zones // 8] for i in zone_bytes[:-1]]
@@ -202,25 +206,20 @@ class Alarm(object):
     data['failed zones'] = self._parse_bytes(zone_data[3])
     index = zone_bytes[-1]
     data['partitions'] = {}
-    for partition, value in enumerate(response[index:index+16], 1):
+    for partition, value in enumerate(response[index:index + 16], 1):
       data['partitions'][partition] = Arm(bytes([value])).name.lower()
     index += 16
-    failures = self._parse_bytes(response[index:index+6])
+    failures = self._parse_bytes(response[index:index + 6])
     failures = {self._DISCRETE_FAILURES[failure] for failure in failures}
     index += 6
-    for fail_type, count in (('Keypad %d Failure', 1),
-                             ('Keypad %d Tamper', 1),
-                             ('Zone Expander %d Failure', 2),
-                             ('Zone Expander %d Tamper', 2),
-                             ('Zone Expander %d Low Voltage', 2),
-                             ('Zone Expander %d AC Failure', 2),
-                             ('Zone Expander %d Low Battery', 2),
-                             ('Out Expander %d Failure', 1),
-                             ('Out Expander %d Tamper', 1),
-                             ('Out Expander %d Low Voltage', 1),
-                             ('Out Expander %d AC Failure', 1),
-                             ('Out Expander %d Low Battery', 1)):
-      clustered_failures = self._parse_bytes(response[index:index+count])
+    for fail_type, count in (('Keypad %d Failure', 1), ('Keypad %d Tamper', 1),
+                             ('Zone Expander %d Failure', 2), ('Zone Expander %d Tamper', 2),
+                             ('Zone Expander %d Low Voltage', 2), ('Zone Expander %d AC Failure',
+                                                                   2),
+                             ('Zone Expander %d Low Battery', 2), ('Out Expander %d Failure', 1),
+                             ('Out Expander %d Tamper', 1), ('Out Expander %d Low Voltage', 1),
+                             ('Out Expander %d AC Failure', 1), ('Out Expander %d Low Battery', 1)):
+      clustered_failures = self._parse_bytes(response[index:index + count])
       for failure in clustered_failures:
         failures.add(fail_type % failure)
       index += count
@@ -236,10 +235,11 @@ class Alarm(object):
   def arm(self, mode: Arm, partitions: Partitions) -> Status:
     """Arms (or disarms) the provided alarm partitions."""
     self._read_message()
-    address = sum(1<<(p-1) for p in partitions).to_bytes(2, byteorder='little')
-    self._send_message(
-        self._Message.OPEN if mode == Arm.DISARM else self._Message.CLOSE,
-        self._Channel.SYSTEM, address=address, data=mode.value)
+    address = sum(1 << (p - 1) for p in partitions).to_bytes(2, byteorder='little')
+    self._send_message(self._Message.OPEN if mode == Arm.DISARM else self._Message.CLOSE,
+                       self._Channel.SYSTEM,
+                       address=address,
+                       data=mode.value)
     return self.get_status()
 
   def zones(self) -> Status:
@@ -268,14 +268,17 @@ class Alarm(object):
       raise Error('Invalid input on channel, CRC for {} is {}, not {}!'.format(
           self._make_hex(data), self._crc(data), crc))
     if self._module_id != data[1:2]:
-      raise Error('Invalid module ID. Expected {}, got {}'.format(
-          self._make_hex(self._module_id), self._make_hex(data[1:2])))
+      raise Error('Invalid module ID. Expected {}, got {}'.format(self._make_hex(self._module_id),
+                                                                  self._make_hex(data[1:2])))
     return data
 
-  def _send_message(self, message: _Message, channel: _Channel,
-                    address: bytes=b'', data: bytes=b'') -> None:
-    output = b''.join((self._module_id, message.value, channel.value,
-                       bytes([len(address)]), address, data))
+  def _send_message(self,
+                    message: _Message,
+                    channel: _Channel,
+                    address: bytes = b'',
+                    data: bytes = b'') -> None:
+    output = b''.join(
+        (self._module_id, message.value, channel.value, bytes([len(address)]), address, data))
     output = bytes([len(output)]) + output
     output += self._crc(output).to_bytes(2, byteorder='big')
     logging.debug('<<< ' + self._make_hex(output))
@@ -286,12 +289,12 @@ class Alarm(object):
   @staticmethod
   def _parse_bytes(data: bytes) -> typing.Set[int]:
     bits = int.from_bytes(data, byteorder='little')
-    return {i+1 for i in range(bits.bit_length()) if bits & 1 << i}
-    
+    return {i + 1 for i in range(bits.bit_length()) if bits & 1 << i}
+
   @staticmethod
   def _make_hex(data: bytes) -> str:
     return ' '.join('%02x' % d for d in data)
-    
+
   def _close(self) -> None:
     if self._channel:
       self._channel.close()
