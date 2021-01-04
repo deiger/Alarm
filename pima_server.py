@@ -281,6 +281,8 @@ def mqtt_publish_discovery() -> None:
       open_zones_config = {
           'name':
               f'Alarm Zone {i} Open',
+          'unique_id':
+              f'pima_alarm_zone_{i}_open',
           'device': {
               **device_info, 'via_device': 'pima_alarm'
           },
@@ -298,6 +300,8 @@ def mqtt_publish_discovery() -> None:
       alarmed_zones_config = {
           'name':
               f'Alarm Zone {i} Alarming',
+          'unique_id':
+              f'pima_alarm_zone_{i}_alarming',
           'device': {
               **device_info, 'via_device': 'pima_alarm'
           },
