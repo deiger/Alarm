@@ -238,6 +238,88 @@ def mqtt_publish_status(status: dict) -> None:
     _mqtt_client.publish(_mqtt_topics['pub'], payload=to_json(status))
 
 
+def mqtt_publish_discovery() -> None:
+  if _mqtt_client:
+    device_info = {
+        'identifiers': [f'pima_alarm'],
+        'manufacturer': f'PIMA',
+        'model': f'Hunter Pro 8{_parsed_args.zones}',
+        'name': 'PIMA Alarm',
+    }
+    alarm_config = {
+        'name':
+            'PIMA Alarm',
+        'unique_id':
+            'pima_alarm',
+        'device':
+            device_info,
+        'state_topic':
+            _mqtt_topics['pub'],
+        'command_topic':
+            _mqtt_topics['sub'],
+        'availability_topic':
+            _mqtt_topics['lwt'],
+        'code_arm_required':
+            False,
+        'code_disarm_required':
+            False,
+        'value_template':
+            """{% if value_json['partitions']['1'] == 'home1' %}armed_home{%
+                              elif value_json['partitions']['1'] == 'full_arm' %}armed_away{%
+                              else %}disarmed{% endif %}""",
+        'payload_disarm':
+            '{"command": "arm", "mode": "disarm"}',
+        'payload_arm_home':
+            '{"command": "arm", "mode": "home1"}',
+        'payload_arm_away':
+            '{"command": "arm", "mode": "full_arm"}'
+    }
+    _mqtt_client.publish(_mqtt_topics['discovery'].format('alarm_control_panel'),
+                         payload=to_json(alarm_config),
+                         retain=True)
+    for i in range(1, min(_parsed_args.mqtt_discovery_max_zone, _parsed_args.zones) + 1):
+      open_zones_config = {
+          'name':
+              f'Alarm Zone {i} Open',
+          'device': {
+              **device_info, 'via_device': 'pima_alarm'
+          },
+          'state_topic':
+              _mqtt_topics['pub'],
+          'availability_topic':
+              _mqtt_topics['lwt'],
+          'payload_on':
+              'on',
+          'payload_off':
+              'off',
+          'value_template':
+              f"{{% if {i} in value_json['open zones'] %}}on{{% else %}}off{{% endif %}}"
+      }
+      alarmed_zones_config = {
+          'name':
+              f'Alarm Zone {i} Alarming',
+          'device': {
+              **device_info, 'via_device': 'pima_alarm'
+          },
+          'state_topic':
+              _mqtt_topics['pub'],
+          'availability_topic':
+              _mqtt_topics['lwt'],
+          'payload_on':
+              'on',
+          'payload_off':
+              'off',
+          'value_template':
+              f"{{% if {i} in value_json['alarmed zones'] %}}on{{% else %}}off{{% endif %}}"
+      }
+      _mqtt_client.publish(_mqtt_topics['discovery'].format(f'binary_sensor/open_zone_{i}'),
+                           payload=to_json(open_zones_config),
+                           retain=True)
+      _mqtt_client.publish(_mqtt_topics['discovery'].format(f'binary_sensor/alarmed_zone_{i}'),
+                           payload=to_json(alarmed_zones_config),
+                           retain=True)
+
+
 def mqtt_publish_lwt_online() -> None:
   if _mqtt_client:
     _mqtt_client.publish(_mqtt_topics['lwt'], payload='online', retain=True)
@@ -286,6 +368,11 @@ def ParseArguments() -> argparse.Namespace:
                           help='<user:password> for the MQTT channel.')
   arg_parser.add_argument('--mqtt_topic', default='pima_alarm',
                           help='MQTT topic.')
+  arg_parser.add_argument('--mqtt_discovery_prefix', default='homeassistant',
+                          help='MQTT discovery prefix for HomeAssistant.')
+  arg_parser.add_argument('--mqtt_discovery_max_zone', default=8, type=int,
+                          help='The highest number to enable for MQTT discovery ' +
+                          '(to avoid adding sensors for inoperative zones).')
   arg_parser.add_argument('--log_level', default='WARNING',
                           choices={'CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'},
                           help='Minimal log level.')
@@ -314,6 +401,8 @@ if __name__ == '__main__':
     _mqtt_topics['pub'] = os.path.join(_parsed_args.mqtt_topic, 'status')
     _mqtt_topics['sub'] = os.path.join(_parsed_args.mqtt_topic, 'command')
     _mqtt_topics['lwt'] = os.path.join(_parsed_args.mqtt_topic, 'LWT')
+    _mqtt_topics['discovery'] = os.path.join(_parsed_args.mqtt_discovery_prefix, '{}', 'pima_alarm',
+                                             'config')
     _mqtt_client = mqtt.Client(client_id=_parsed_args.mqtt_client_id,
                                clean_session=True)
     _mqtt_client.on_connect = mqtt_on_connect
@@ -329,6 +418,7 @@ if __name__ == '__main__':
         time.sleep(5)
       else:
         break
+    mqtt_publish_discovery()
     mqtt_publish_lwt_online()
     _mqtt_client.loop_start()
 
