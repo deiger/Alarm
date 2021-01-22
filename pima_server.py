@@ -226,17 +226,28 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 def mqtt_on_connect(client: mqtt.Client, userdata, flags, rc):
+  logging.debug('Connected to MQTT at %s:%d', _parsed_args.mqtt_host, _parsed_args.mqtt_port)
+
+  mqtt_publish_discovery()
+  mqtt_publish_lwt_online()
+
   client.subscribe(_mqtt_topics['sub'])
 
+  logging.debug('Completed registration to MQTT')
 
 def mqtt_on_message(client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
-  mqtt_publish_status(RunJsonCommand(from_json(message.payload)))
+    try:
+      mqtt_publish_status(RunJsonCommand(from_json(message.payload)))
+    except pima.Error:
+      logging.exception('Failed handling MQTT message')
 
+def mqtt_on_disconnect(client: mqtt.Client, userdata, rc):
+  logging.info('Disconnected from MQTT: %d', rc)
+  mqtt_connect()
 
 def mqtt_publish_status(status: dict) -> None:
   if _mqtt_client:
     _mqtt_client.publish(_mqtt_topics['pub'], payload=to_json(status))
-
 
 def mqtt_publish_discovery() -> None:
   if _mqtt_client:
@@ -326,8 +337,25 @@ def mqtt_publish_discovery() -> None:
 
 def mqtt_publish_lwt_online() -> None:
   if _mqtt_client:
+    logging.debug('Publishing online to LWT')
     _mqtt_client.publish(_mqtt_topics['lwt'], payload='online', retain=True)
 
+def mqtt_connect() -> None:
+  if not _mqtt_client:
+    return
+
+  logging.debug('Connecting to MQTT at %s:%d', _parsed_args.mqtt_host, _parsed_args.mqtt_port)
+
+  _mqtt_client.will_set(_mqtt_topics['lwt'], payload='offline', retain=True)
+
+  while True:
+    try:
+      _mqtt_client.connect(_parsed_args.mqtt_host, _parsed_args.mqtt_port)
+    except (socket.timeout, OSError):
+      logging.exception('Failed to connect to MQTT broker. Retrying in 5 seconds...')
+      time.sleep(5)
+    else:
+      break
 
 class LoginCodes(object):
   """'Container' for all valid login codes."""
@@ -419,19 +447,10 @@ if __name__ == '__main__':
     _mqtt_client = mqtt.Client(client_id=_parsed_args.mqtt_client_id, clean_session=True)
     _mqtt_client.on_connect = mqtt_on_connect
     _mqtt_client.on_message = mqtt_on_message
+    _mqtt_client.on_disconnect = mqtt_on_disconnect
     if _parsed_args.mqtt_user:
       _mqtt_client.username_pw_set(*_parsed_args.mqtt_user.split(':', 1))
-    _mqtt_client.will_set(_mqtt_topics['lwt'], payload='offline', retain=True)
-    while True:
-      try:
-        _mqtt_client.connect(_parsed_args.mqtt_host, _parsed_args.mqtt_port)
-      except (socket.timeout, OSError):
-        logging.exception('Failed to connect to MQTT broker. Retrying in 5 seconds...')
-        time.sleep(5)
-      else:
-        break
-    mqtt_publish_discovery()
-    mqtt_publish_lwt_online()
+    mqtt_connect()
     _mqtt_client.loop_start()
 
   httpd = HTTPServer(('', _parsed_args.port), HTTPRequestHandler)
