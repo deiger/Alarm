@@ -1,0 +1,52 @@
+{
+  "name": "PIMA Alarms",
+  "version": "0.7.0",
+  "slug": "pima",
+  "description": "Interface for negotiation with PIMA Hunter Pro alarms.",
+  "url": "https://github.com/deiger/Alarm",
+  "image": "deiger/pima",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "startup": "application",
+  "boot": "auto",
+  "host_network": true,
+  "map": ["config:rw"],
+  "discovery": ["mqtt"],
+  "services": ["mqtt:want"],
+  "environment": {
+    "OPTIONS_FILE": "/data/options.json"
+  },
+  "options": {
+    "log_level": "INFO",
+    "login": null,
+    "zones": "32",
+    "mqtt_discovery_max_zone": 8,
+    "mqtt_host": "localhost",
+    "mqtt_port": null,
+    "mqtt_topic": null,
+    "mqtt_user": null,
+    "mqtt_pass": null,
+    "mqtt_client_id": null,
+    "serialport": null,
+    "pima_host": null,
+    "pima_port": null,
+    "key": null,
+    "port": null
+  },
+  "schema": {
+    "log_level": "list(CRITICAL|ERROR|WARNING|INFO|DEBUG)?",
+    "login": "match([0-9]{4,6})",
+    "zones": "list(32,96,144)?",
+    "mqtt_discovery_max_zone": "int(0,144)",
+    "mqtt_host": "str?",
+    "mqtt_port": "port?",
+    "mqtt_topic": "str?",
+    "mqtt_user": "str?",
+    "mqtt_pass": "str?",
+    "mqtt_client_id": "str?",
+    "serialport": "str?",
+    "pima_host": "str?",
+    "pima_port": "port?",
+    "key": "str",
+    "port": "port"
+  }
+}
