@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.1 (2021-01-29)
+
+
+Full set of changes: [`0.7.0...0.7.1`](https://github.com/deiger/Alarm/compare/0.7.0...0.7.1)
+
 ## 0.7.0 (2021-01-29)
 
 
