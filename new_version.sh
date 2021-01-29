@@ -14,7 +14,7 @@ fi
 git tag -a $NEW_VERSION -m $NEW_VERSION_MSG
 auto-changelog
 
-for f in pima_server.py hassio/config.json; do
+for f in pima_server.py setup.py hassio/config.json; do
   sed -i "" -e "s/$OLD_VERSION/$NEW_VERSION/" $f
 done
 

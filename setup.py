@@ -1,6 +1,5 @@
 import setuptools
 from os import path
-import pima_server
 
 this_directory = path.abspath(path.dirname(__file__))
 
@@ -9,7 +8,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setuptools.setup(
     name='pima',
-    version=pima_server.__version__,
+    version=0.7.0,
     description='Interface for negotiation with PIMA Hunter Pro alarms.',
     long_description=long_description,
     long_description_content_type='text/markdown',
