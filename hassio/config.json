@@ -35,7 +35,7 @@
   "schema": {
     "log_level": "list(CRITICAL|ERROR|WARNING|INFO|DEBUG)?",
     "login": "match([0-9]{4,6})",
-    "zones": "list(32,96,144)?",
+    "zones": "list(32|96|144)?",
     "mqtt_discovery_max_zone": "int(0,144)",
     "mqtt_host": "str?",
     "mqtt_port": "port?",
