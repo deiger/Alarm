@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 __author__ = 'droreiger@gmail.com (Dror Eiger)'
+__version__ = '0.7.0'
 
 import argparse
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -235,19 +236,23 @@ def mqtt_on_connect(client: mqtt.Client, userdata, flags, rc):
 
   logging.debug('Completed registration to MQTT')
 
+
 def mqtt_on_message(client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
-    try:
-      mqtt_publish_status(RunJsonCommand(from_json(message.payload)))
-    except pima.Error:
-      logging.exception('Failed handling MQTT message')
+  try:
+    mqtt_publish_status(RunJsonCommand(from_json(message.payload)))
+  except pima.Error:
+    logging.exception('Failed handling MQTT message')
+
 
 def mqtt_on_disconnect(client: mqtt.Client, userdata, rc):
   logging.info('Disconnected from MQTT: %d', rc)
   mqtt_connect()
 
+
 def mqtt_publish_status(status: dict) -> None:
   if _mqtt_client:
     _mqtt_client.publish(_mqtt_topics['pub'], payload=to_json(status))
+
 
 def mqtt_publish_discovery() -> None:
   if _mqtt_client:
@@ -340,6 +345,7 @@ def mqtt_publish_lwt_online() -> None:
     logging.debug('Publishing online to LWT')
     _mqtt_client.publish(_mqtt_topics['lwt'], payload='online', retain=True)
 
+
 def mqtt_connect() -> None:
   if not _mqtt_client:
     return
@@ -356,6 +362,7 @@ def mqtt_connect() -> None:
       time.sleep(5)
     else:
       break
+
 
 class LoginCodes(object):
   """'Container' for all valid login codes."""

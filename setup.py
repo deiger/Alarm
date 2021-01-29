@@ -18,9 +18,7 @@ setuptools.setup(
     author_email='droreiger@gmail.com',
     license='GPL 3.0',
     packages=setuptools.find_packages(),
-    install_requires=[
-        'crcmod', 'paho-mqtt==1.5.0', 'pyserial'
-    ],
+    install_requires=['crcmod', 'paho-mqtt==1.5.0', 'pyserial'],
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
