@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 __author__ = 'droreiger@gmail.com (Dror Eiger)'
-__version__ = '0.7.1.3'
+__version__ = '0.7.1.4'
 
 import argparse
 from http.server import HTTPServer, BaseHTTPRequestHandler
