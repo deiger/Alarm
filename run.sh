@@ -10,7 +10,7 @@ for ARG in port key login zones mqtt_discovery_max_zone serialport pima_host pim
 done
 MQTT_USER=$(jq -r 'if (.mqtt_user and .mqtt_pass) then (.mqtt_user + ":" + .mqtt_pass) else "" end' $OPTIONS_FILE)
 if [ -n "$MQTT_USER" ]; then
-  ARGS="$ARGS --mqtt_user \"$MQTT_USER\""
+  ARGS="$ARGS --mqtt_user $MQTT_USER"
 fi
 LOG_LEVEL=$(jq -r '.log_level | ascii_upcase // "WARNING"' $OPTIONS_FILE)
 
