@@ -8,10 +8,10 @@
   "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
   "startup": "application",
   "boot": "auto",
-  "host_network": true,
   "map": ["config:rw"],
   "discovery": ["mqtt"],
   "services": ["mqtt:want"],
+  "uart": true,
   "environment": {
     "OPTIONS_FILE": "/data/options.json"
   },
