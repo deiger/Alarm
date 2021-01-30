@@ -433,7 +433,7 @@ def ParseArguments() -> argparse.Namespace:
 if __name__ == '__main__':
   _parsed_args = ParseArguments()  # type: argparse.Namespace
 
-  if use_stderr or os.environ.get('PLATFORM') == 'docker':
+  if os.environ.get('PLATFORM') == 'docker':
     logging_handler = logging.StreamHandler(sys.stderr)
   elif JournalHandler:
     logging_handler = JournalHandler()
