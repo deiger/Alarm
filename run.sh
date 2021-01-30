@@ -14,4 +14,4 @@ if [ -n "$MQTT_USER" ]; then
 fi
 LOG_LEVEL=$(jq -r '.log_level | ascii_upcase // "WARNING"' $OPTIONS_FILE)
 
-/usr/bin/python3 -u pima_server.py --log_level $LOG_LEVEL $ARGS
+python -u pima_server.py --log_level $LOG_LEVEL $ARGS

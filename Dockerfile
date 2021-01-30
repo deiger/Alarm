@@ -7,7 +7,7 @@ COPY . /app
 WORKDIR /app
 
 RUN dpkg --add-architecture i386 && apt-get update && apt-get install -y --no-install-recommends jq
-RUN python3 setup.py install
+RUN python setup.py install
 
 ENV PLATFORM=docker
 
