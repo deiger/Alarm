@@ -21,7 +21,7 @@
     "login": null,
     "zones": "32",
     "mqtt_discovery_max_zone": 8,
-    "mqtt_host": "localhost",
+    "mqtt_host": "core-mosquitto",
     "key": null,
     "port": null
   },
