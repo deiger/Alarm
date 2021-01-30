@@ -5,7 +5,7 @@ ARGS=
 for ARG in port key login zones mqtt_discovery_max_zone serialport pima_host pima_port mqtt_host mqtt_port mqtt_client_id mqtt_topic; do
   VAL=$(jq -r ".$ARG // \"\"" $OPTIONS_FILE)
   if [ -n "$VAL" ]; then
-    ARGS="$ARGS --$ARG \"$VAL\""
+    ARGS="$ARGS --$ARG $VAL"
   fi
 done
 MQTT_USER=$(jq -r 'if (.mqtt_user and .mqtt_pass) then (.mqtt_user + ":" + .mqtt_pass) else "" end' $OPTIONS_FILE)
