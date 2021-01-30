@@ -11,6 +11,7 @@
   "map": ["config:rw"],
   "discovery": ["mqtt"],
   "services": ["mqtt:want"],
+  "auto_uart": true,
   "uart": true,
   "environment": {
     "OPTIONS_FILE": "/data/options.json"
