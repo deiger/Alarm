@@ -103,6 +103,8 @@ class AlarmServer(threading.Thread):
           while not status['logged in']:
             # Re-login if previous session ended.
             status = self._alarm.login(_parsed_args.login)
+          outputs = self._alarm.get_outputs()  # type: pima.Outputs
+          status['outputs'] = outputs
           self._set_status(status)
         time.sleep(1)
       except:
