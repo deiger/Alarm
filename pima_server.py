@@ -287,12 +287,15 @@ def mqtt_publish_discovery() -> None:
             False,
         'value_template':
             """{% if value_json['partitions']['1'] == 'home1' %}armed_home{%
+                              elif value_json['partitions']['1'] == 'home2' %}armed_night{%
                               elif value_json['partitions']['1'] == 'full_arm' %}armed_away{%
                               else %}disarmed{% endif %}""",
         'payload_disarm':
             '{"command": "arm", "mode": "disarm"}',
         'payload_arm_home':
             '{"command": "arm", "mode": "home1"}',
+        'payload_arm_night':
+            '{"command": "arm", "mode": "home2"}',
         'payload_arm_away':
             '{"command": "arm", "mode": "full_arm"}'
     }
