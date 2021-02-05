@@ -255,7 +255,7 @@ def mqtt_on_disconnect(client: mqtt.Client, userdata, rc):
 
 def mqtt_publish_status(status: dict) -> None:
   if _mqtt_client:
-    _mqtt_client.publish(_mqtt_topics['pub'], payload=to_json(status))
+    _mqtt_client.publish(_mqtt_topics['pub'], payload=to_json(status), retain=True)
 
 
 def mqtt_publish_discovery() -> None:
