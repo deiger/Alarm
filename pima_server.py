@@ -134,7 +134,7 @@ class AlarmServer(threading.Thread):
 
   def _set_status(self, status: pima.Status, outputs: typing.Optional[pima.Outputs] = None) -> None:
     with self._status_lock:
-      if self._status == status or self._outputs == outputs:
+      if self._status == status and self._outputs == outputs:
         return  # No update, ignore.
       self._status = status.copy()
       # If did not get outputs status, retain the existing one.
