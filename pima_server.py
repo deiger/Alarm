@@ -103,9 +103,12 @@ class AlarmServer(threading.Thread):
           while not status['logged in']:
             # Re-login if previous session ended.
             status = self._alarm.login(_parsed_args.login)
-          outputs = self._alarm.get_outputs()  # type: pima.Outputs
-          status['outputs'] = outputs
-          self._set_status(status)
+          try:
+            outputs = self._alarm.get_outputs()  # type: pima.Outputs
+          except pima.Error:
+            logging.exception('Failed to get outputs status.')
+            outputs = None
+          self._set_status(status, outputs)
         time.sleep(1)
       except:
         logging.exception('Exception raised by Alarm.')
@@ -129,12 +132,16 @@ class AlarmServer(threading.Thread):
       self._set_status(status)
       return status
 
-  def _set_status(self, status: pima.Status) -> None:
+  def _set_status(self, status: pima.Status, outputs: typing.Optional[pima.Outputs] = None) -> None:
     with self._status_lock:
-      if self._status == status:
+      if self._status == status or self._outputs == outputs:
         return  # No update, ignore.
-      self._status = status
-    logging.info('Status: %s.', self._status)
+      self._status = status.copy()
+      # If did not get outputs status, retain the existing one.
+      if outputs is None and self._outputs is not None:
+        outputs = self._outputs
+    status['outputs'] = outputs
+    logging.info('Status: %s.', status)
     mqtt_publish_status(status)
 
   def _create_alarm(self) -> None:
