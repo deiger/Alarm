@@ -248,14 +248,14 @@ class Alarm(object):
     """Gets the current status of the zones."""
     self._send_message(self._Message.READ, self._Channel.ZONES, address=b'\xff\xff', data=b'\x04')
     response = self._read_message()
-    self._send_message(self._Message.STATUS, self._Channel.IDLE)
     if response and response[3:4] == self._Channel.SYSTEM.value:
+      self._send_message(self._Message.READ, self._Channel.ZONES, address=b'\xff\xff', data=b'\x04')
       response = self._read_message()
       self._send_message(self._Message.STATUS, self._Channel.IDLE)
     if not response:
       return Outputs()
     if response[3:4] != self._Channel.ZONES.value:
-      raise Error('Invalid outputs response {}.'.format(self._make_hex(response[3:4])))
+      raise Error('Invalid outputs response {}.'.format(self._make_hex(response)))
     if response[4:7] != b'\x02\xff\xff':
       raise Error('Invalid address {}.'.format(self._make_hex(response[4:7])))
     return Zones(self._parse_bytes(response[7:-1]))
@@ -264,14 +264,14 @@ class Alarm(object):
     """Gets the currently alarming outputs."""
     self._send_message(self._Message.READ, self._Channel.OUTPUTS, address=b'\x00\x00')
     response = self._read_message()
-    self._send_message(self._Message.STATUS, self._Channel.IDLE)
     if response and response[3:4] == self._Channel.SYSTEM.value:
+      self._send_message(self._Message.READ, self._Channel.OUTPUTS, address=b'\x00\x00')
       response = self._read_message()
       self._send_message(self._Message.STATUS, self._Channel.IDLE)
     if not response:
       return Outputs()
     if response[3:4] != self._Channel.OUTPUTS.value:
-      raise Error('Invalid outputs response {}.'.format(self._make_hex(response[3:4])))
+      raise Error('Invalid outputs response {}.'.format(self._make_hex(response)))
     if response[4:7] != b'\x02\x00\x00':
       raise Error('Invalid address {}.'.format(self._make_hex(response[4:7])))
     return Outputs(self._parse_bytes(response[7:]))
