@@ -295,7 +295,8 @@ def mqtt_publish_discovery() -> None:
         'code_disarm_required':
             False,
         'value_template':
-            """{% if value_json['partitions']['1'] == 'home1' %}armed_home{%
+            """{% if value_json['outputs'] %}triggered{%
+                              elif value_json['partitions']['1'] == 'home1' %}armed_home{%
                               elif value_json['partitions']['1'] == 'home2' %}armed_night{%
                               elif value_json['partitions']['1'] == 'full_arm' %}armed_away{%
                               else %}disarmed{% endif %}""",
