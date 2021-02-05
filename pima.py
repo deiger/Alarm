@@ -249,6 +249,9 @@ class Alarm(object):
     self._send_message(self._Message.READ, self._Channel.ZONES, address=b'\xff\xff', data=b'\x04')
     response = self._read_message()
     self._send_message(self._Message.STATUS, self._Channel.IDLE)
+    if response and response[3:4] == self._Channel.SYSTEM.value:
+      response = self._read_message()
+      self._send_message(self._Message.STATUS, self._Channel.IDLE)
     if not response:
       return Outputs()
     if response[3:4] != self._Channel.ZONES.value:
@@ -262,6 +265,9 @@ class Alarm(object):
     self._send_message(self._Message.READ, self._Channel.OUTPUTS, address=b'\x00\x00')
     response = self._read_message()
     self._send_message(self._Message.STATUS, self._Channel.IDLE)
+    if response and response[3:4] == self._Channel.SYSTEM.value:
+      response = self._read_message()
+      self._send_message(self._Message.STATUS, self._Channel.IDLE)
     if not response:
       return Outputs()
     if response[3:4] != self._Channel.OUTPUTS.value:
