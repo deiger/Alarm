@@ -87,6 +87,8 @@ class AlarmServer(threading.Thread):
       logging.exception('Failed to create alarm object.')
       sys.exit(1)
     self._status_lock = threading.Lock()
+    self._status = None
+    self._outputs = None
     self._alarm_lock = threading.Lock()
     super(AlarmServer, self).__init__(name='PIMA Alarm Server')
 
@@ -134,7 +136,7 @@ class AlarmServer(threading.Thread):
 
   def _set_status(self, status: pima.Status, outputs: typing.Optional[pima.Outputs] = None) -> None:
     with self._status_lock:
-      if self._status == status and self._outputs == outputs:
+      if self._status == status and (outputs is None or self._outputs == outputs):
         return  # No update, ignore.
       self._status = status.copy()
       # If did not get outputs status, retain the existing one.
