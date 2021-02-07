@@ -107,8 +107,8 @@ class AlarmServer(threading.Thread):
             status = self._alarm.login(_parsed_args.login)
           try:
             outputs = self._alarm.get_outputs()  # type: pima.Outputs
-          except pima.Error:
-            logging.exception('Failed to get outputs status.')
+          except pima.Error as e:
+            logging.debug('Failed to get outputs status: %r', e)
             outputs = None
           self._set_status(status, outputs)
         time.sleep(1)
