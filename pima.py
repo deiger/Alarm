@@ -274,7 +274,7 @@ class Alarm(object):
       raise Error('Invalid outputs response {}.'.format(self._make_hex(response)))
     if response[4:7] != b'\x02\x00\x00':
       raise Error('Invalid address {}.'.format(self._make_hex(response[4:7])))
-    return Outputs(self._parse_bytes(response[7:]))
+    return Outputs(self._parse_bytes(response[7:], one_based=False))
 
   def get_parameters(self) -> Status:
     raise NotImplementedError("No support yet for parameters.")
@@ -315,9 +315,10 @@ class Alarm(object):
       time.sleep(1)
 
   @staticmethod
-  def _parse_bytes(data: bytes) -> typing.Set[int]:
+  def _parse_bytes(data: bytes, one_based: bool = True) -> typing.Set[int]:
     bits = int.from_bytes(data, byteorder='little')
-    return {i + 1 for i in range(bits.bit_length()) if bits & 1 << i}
+    base = 1 if one_based else 0
+    return {i + base for i in range(bits.bit_length()) if bits & 1 << i}
 
   @staticmethod
   def _make_hex(data: bytes) -> str:
