@@ -187,6 +187,9 @@ class Alarm(object):
       response = self._read_message()
     self._send_message(self._Message.STATUS, self._Channel.IDLE)
     data = Status({'logged in': False})
+    if response and response[3:4] != self._Channel.SYSTEM.value:
+      response = self._read_message()
+      self._send_message(self._Message.STATUS, self._Channel.IDLE)
     if not response:
       return data
     if response[2:3] != self._Message.STATUS.value:
