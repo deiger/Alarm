@@ -290,17 +290,21 @@ class Alarm(object):
     data = bytes([length]) + self._channel.read(length + 2)
     if data == bytes([length]) * len(data):
       raise GarbageInputError('Garbage ({})!'.format(length))
+      sys.exit(1)
     if len(data) != length + 3:
       raise Error('Not enough data in channel: {} should have {} bytes.'.format(
           self._make_hex(data), length + 3))
+      sys.exit(1)
     logging.debug('>>> ' + self._make_hex(data))
     data, crc = data[:-2], int.from_bytes(data[-2:], byteorder='big')
     if (crc != self._crc(data)):
       raise Error('Invalid input on channel, CRC for {} is {}, not {}!'.format(
           self._make_hex(data), self._crc(data), crc))
+      sys.exit(1)
     if self._module_id != data[1:2]:
       raise Error('Invalid module ID. Expected {}, got {}'.format(self._make_hex(self._module_id),
                                                                   self._make_hex(data[1:2])))
+      sys.exit(1)
     return data
 
   def _send_message(self,
