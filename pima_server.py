@@ -142,6 +142,10 @@ class AlarmServer(threading.Thread):
       # If did not get outputs status, retain the existing one.
       if outputs is None and self._outputs is not None:
         outputs = self._outputs
+      self._outputs = outputs
+      # Don't pass None to MQTT.
+      if outputs is None:
+        outputs = pima.Outputs()
     status['outputs'] = outputs
     logging.info('Status: %s.', status)
     mqtt_publish_status(status)
