@@ -1,6 +1,6 @@
 {
   "name": "PIMA Alarms",
-  "version": "0.7.2.8",
+  "version": "0.7.2.9",
   "slug": "pima",
   "description": "Interface for negotiation with PIMA Hunter Pro alarms.",
   "url": "https://github.com/deiger/Alarm",
