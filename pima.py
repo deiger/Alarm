@@ -180,10 +180,10 @@ class Alarm(object):
     except GarbageInputError as ex:
       logging.info('Exception: %r.', ex)
       # Clear up a messy channel (sometime happens on startup).
-      d = b'\xf3'
-      while d == d[:1] * len(d):
-        d = self._channel.readline()
-        logging.debug('Read message: %r.', d)
+#       d = b'\xf3'
+#       while d == d[:1] * len(d):
+#         d = self._channel.readline()
+#         logging.debug('Read message: %r.', d)
       response = self._read_message()
     self._send_message(self._Message.STATUS, self._Channel.IDLE)
     data = Status({'logged in': False})
