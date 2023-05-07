@@ -179,11 +179,6 @@ class Alarm(object):
       response = self._read_message()
     except GarbageInputError as ex:
       logging.info('Exception: %r.', ex)
-      # Clear up a messy channel (sometime happens on startup).
-      d = b'\xf3'
-      while d == d[:1] * len(d):
-        d = self._channel.readline()
-        logging.debug('Read message: %r.', d)
       response = self._read_message()
     self._send_message(self._Message.STATUS, self._Channel.IDLE)
     data = Status({'logged in': False})
@@ -273,7 +268,7 @@ class Alarm(object):
       self._send_message(self._Message.STATUS, self._Channel.IDLE)
     if not response:
       return Outputs()
-    if response[3:4] != self._Channel.OUTPUTS.value:
+    if response[2:3] != b'\x05' and response[3:4] != self._Channel.OUTPUTS.value:
       raise Error('Invalid outputs response {}.'.format(self._make_hex(response)))
     if response[4:7] != b'\x02\x00\x00':
       raise Error('Invalid address {}.'.format(self._make_hex(response[4:7])))
