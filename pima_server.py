@@ -283,7 +283,7 @@ def mqtt_publish_discovery() -> None:
     }
     alarm_config = {
         'name':
-            'PIMA Alarm',
+            None,
         'unique_id':
             'pima_alarm',
         'device':
