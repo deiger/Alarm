@@ -98,6 +98,10 @@ class AlarmServer(threading.Thread):
 
   def run(self) -> None:
     """Continuously query the alarm for status."""
+    consecutive_failures = 0
+    max_consecutive_failures = 3
+    recovery_delay = 2  # seconds
+
     while True:
       try:
         with self._alarm_lock:
@@ -111,16 +115,34 @@ class AlarmServer(threading.Thread):
             logging.debug('Failed to get outputs status: %r', e)
             outputs = None
           self._set_status(status, outputs)
+
+        # Reset failure counter on successful operation
+        consecutive_failures = 0
         time.sleep(1)
-      except:
+
+      except Exception as e:
+        consecutive_failures += 1
         logging.exception('Exception raised by Alarm.')
+
+        if consecutive_failures >= max_consecutive_failures:
+          logging.error('Too many consecutive failures (%d). Exiting for clean restart.',
+                        consecutive_failures)
+          _thread.interrupt_main()
+          return
+
         try:
           with self._alarm_lock:
-            logging.info('Trying to create the Alarm anew.')
+            logging.info('Attempting to recover (attempt %d/%d)...', consecutive_failures,
+                         max_consecutive_failures)
+            time.sleep(recovery_delay)  # Add delay before recovery attempt
             self._create_alarm()
-        except pima.Error:
-          logging.exception('Failed to recreate Alarm object. Exit for a clean restart.')
-          _thread.interrupt_main()
+            # Test the connection immediately
+            self._status = self._alarm.get_status()
+            logging.info('Recovery successful. New status: %s', self._status)
+        except Exception as recovery_error:
+          logging.exception('Recovery attempt failed:')
+          # Don't exit immediately, let the consecutive_failures counter handle it
+          time.sleep(recovery_delay)  # Add delay before next iteration
 
   def get_status(self) -> pima.Status:
     """Gets the internally stored alarm status."""

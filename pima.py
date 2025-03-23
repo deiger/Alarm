@@ -173,64 +173,102 @@ class Alarm(object):
     self._send_message(self._Message.WRITE, self._Channel.LOGIN, data=data)
     return self.get_status()
 
-  def get_status(self) -> Status:
-    """Returns the current alarm status."""
-    try:
-      response = self._read_message()
-    except GarbageInputError as ex:
-      logging.info('Exception: %r.', ex)
-      response = self._read_message()
-    self._send_message(self._Message.STATUS, self._Channel.IDLE)
-    data = Status({'logged in': False})
-    if response and response[3:4] != self._Channel.SYSTEM.value:
-      response = self._read_message()
-      self._send_message(self._Message.STATUS, self._Channel.IDLE)
-    if not response:
-      return data
-    if response[2:3] != self._Message.STATUS.value:
-      raise Error('Invalid message {}.'.format(self._make_hex(response[2:3])))
-    if response[3:4] == self._Channel.IDLE.value:
-      return data
-    if response[3:4] != self._Channel.SYSTEM.value:
-      raise Error('Invalid status {}.'.format(self._make_hex(response[3:4])))
-    if response[4:7] != b'\x02\x00\x00':
-      raise Error('Invalid address {}.'.format(self._make_hex(response[4:7])))
-    # Calculate the break points.
-    zone_bytes = range(7, len(response), self._ZONES_TO_ZONE_BYTES[self._zones])[:5]
-    # Get the data chuncks.
-    # HP32 zones us using only the first bytes.
-    zone_data = [response[i:i + self._zones // 8] for i in zone_bytes[:-1]]
-    data['open zones'] = self._parse_bytes(zone_data[0])
-    data['alarmed zones'] = self._parse_bytes(zone_data[1])
-    data['bypassed zones'] = self._parse_bytes(zone_data[2])
-    data['failed zones'] = self._parse_bytes(zone_data[3])
-    index = zone_bytes[-1]
-    data['partitions'] = {}
-    for partition, value in enumerate(response[index:index + 16], 1):
-      data['partitions'][partition] = Arm(bytes([value])).name.lower()
-    index += 16
-    failures = self._parse_bytes(response[index:index + 6])
-    failures = {self._DISCRETE_FAILURES[failure] for failure in failures}
-    index += 6
-    for fail_type, count in (('Keypad %d Failure', 1), ('Keypad %d Tamper', 1),
-                             ('Zone Expander %d Failure', 2), ('Zone Expander %d Tamper', 2),
-                             ('Zone Expander %d Low Voltage', 2), ('Zone Expander %d AC Failure',
-                                                                   2),
-                             ('Zone Expander %d Low Battery', 2), ('Out Expander %d Failure', 1),
-                             ('Out Expander %d Tamper', 1), ('Out Expander %d Low Voltage', 1),
-                             ('Out Expander %d AC Failure', 1), ('Out Expander %d Low Battery', 1)):
-      clustered_failures = self._parse_bytes(response[index:index + count])
-      for failure in clustered_failures:
-        failures.add(fail_type % failure)
-      index += count
-    if failures:
-      data['failures'] = failures
-    # Skip ID Account
-    index += 4
-    flags = response[index]
-    data['logged in'] = bool(flags & 1 << 0)
-    data['command ack'] = bool(flags & 1 << 1)
-    return data
+  def get_status(self, max_retries=3) -> Status:
+    """Returns the current alarm status.
+
+    Args:
+        max_retries: Maximum number of retry attempts for the entire status retrieval
+
+    Returns:
+        Status dictionary containing the alarm state
+    """
+    for attempt in range(max_retries):
+      try:
+        response = self._read_message()
+        self._send_message(self._Message.STATUS, self._Channel.IDLE)
+        data = Status({'logged in': False})
+
+        if response and response[3:4] != self._Channel.SYSTEM.value:
+          response = self._read_message()
+          self._send_message(self._Message.STATUS, self._Channel.IDLE)
+
+        if not response:
+          return data
+
+        if response[2:3] != self._Message.STATUS.value:
+          if attempt < max_retries - 1:
+            logging.debug('Invalid message type, retrying...')
+            time.sleep(1)
+            continue
+          raise Error('Invalid message {}.'.format(self._make_hex(response[2:3])))
+
+        if response[3:4] == self._Channel.IDLE.value:
+          return data
+
+        if response[3:4] != self._Channel.SYSTEM.value:
+          if attempt < max_retries - 1:
+            logging.debug('Invalid status channel, retrying...')
+            time.sleep(1)
+            continue
+          raise Error('Invalid status {}.'.format(self._make_hex(response[3:4])))
+
+        if response[4:7] != b'\x02\x00\x00':
+          if attempt < max_retries - 1:
+            logging.debug('Invalid address, retrying...')
+            time.sleep(1)
+            continue
+          raise Error('Invalid address {}.'.format(self._make_hex(response[4:7])))
+
+        # Rest of the processing remains the same
+        zone_bytes = range(7, len(response), self._ZONES_TO_ZONE_BYTES[self._zones])[:5]
+        zone_data = [response[i:i + self._zones // 8] for i in zone_bytes[:-1]]
+        data['open zones'] = self._parse_bytes(zone_data[0])
+        data['alarmed zones'] = self._parse_bytes(zone_data[1])
+        data['bypassed zones'] = self._parse_bytes(zone_data[2])
+        data['failed zones'] = self._parse_bytes(zone_data[3])
+
+        index = zone_bytes[-1]
+        data['partitions'] = {}
+        for partition, value in enumerate(response[index:index + 16], 1):
+          data['partitions'][partition] = Arm(bytes([value])).name.lower()
+
+        index += 16
+        failures = self._parse_bytes(response[index:index + 6])
+        failures = {self._DISCRETE_FAILURES[failure] for failure in failures}
+
+        index += 6
+        for fail_type, count in (('Keypad %d Failure', 1), ('Keypad %d Tamper', 1),
+                                 ('Zone Expander %d Failure', 2), ('Zone Expander %d Tamper', 2),
+                                 ('Zone Expander %d Low Voltage',
+                                  2), ('Zone Expander %d AC Failure',
+                                       2), ('Zone Expander %d Low Battery',
+                                            2), ('Out Expander %d Failure', 1),
+                                 ('Out Expander %d Tamper', 1), ('Out Expander %d Low Voltage', 1),
+                                 ('Out Expander %d AC Failure', 1), ('Out Expander %d Low Battery',
+                                                                     1)):
+          clustered_failures = self._parse_bytes(response[index:index + count])
+          for failure in clustered_failures:
+            failures.add(fail_type % failure)
+          index += count
+
+        if failures:
+          data['failures'] = failures
+
+        # Skip ID Account
+        index += 4
+        flags = response[index]
+        data['logged in'] = bool(flags & 1 << 0)
+        data['command ack'] = bool(flags & 1 << 1)
+        return data
+
+      except (GarbageInputError, Error) as e:
+        if attempt < max_retries - 1:
+          logging.debug('Status retrieval attempt %d failed: %s. Retrying...', attempt + 1, str(e))
+          time.sleep(1)
+          continue
+        raise
+
+    raise Error('Failed to get status after {} attempts'.format(max_retries))
 
   def arm(self, mode: Arm, partitions: Partitions) -> Status:
     """Arms (or disarms) the provided alarm partitions."""
@@ -277,26 +315,78 @@ class Alarm(object):
   def get_parameters(self) -> Status:
     raise NotImplementedError("No support yet for parameters.")
 
-  def _read_message(self) -> bytes:
-    data = None
-    while not data:
-      data = self._channel.read(1)
-    length = ord(data)
-    data = bytes([length]) + self._channel.read(length + 2)
-    if data == bytes([length]) * len(data):
-      raise GarbageInputError('Garbage ({})!'.format(length))
-    if len(data) != length + 3:
-      raise Error('Not enough data in channel: {} should have {} bytes.'.format(
-          self._make_hex(data), length + 3))
-    logging.debug('>>> ' + self._make_hex(data))
-    data, crc = data[:-2], int.from_bytes(data[-2:], byteorder='big')
-    if (crc != self._crc(data)):
-      raise Error('Invalid input on channel, CRC for {} is {}, not {}!'.format(
-          self._make_hex(data), self._crc(data), crc))
-    if self._module_id != data[1:2]:
-      raise Error('Invalid module ID. Expected {}, got {}'.format(self._make_hex(self._module_id),
-                                                                  self._make_hex(data[1:2])))
-    return data
+  def _read_message(self, max_retries=3, retry_delay=0.5) -> bytes:
+    """Read a message from the channel with retries.
+
+    Args:
+        max_retries: Maximum number of retry attempts
+        retry_delay: Delay in seconds between retries
+
+    Returns:
+        The read message as bytes
+
+    Raises:
+        Error: If reading fails after all retries
+        GarbageInputError: If only garbage data is received
+    """
+    last_error = None
+    for attempt in range(max_retries):
+      try:
+        data = None
+        while not data:
+          data = self._channel.read(1)
+          if not data and attempt < max_retries - 1:
+            time.sleep(retry_delay)
+            continue
+
+        length = ord(data)
+        data = bytes([length]) + self._channel.read(length + 2)
+
+        # Check for garbage data
+        if data == bytes([length]) * len(data):
+          if attempt < max_retries - 1:
+            time.sleep(retry_delay)
+            continue
+          raise GarbageInputError('Garbage ({})!'.format(length))
+
+        # Check data length
+        if len(data) != length + 3:
+          if attempt < max_retries - 1:
+            time.sleep(retry_delay)
+            continue
+          raise Error('Not enough data in channel: {} should have {} bytes.'.format(
+              self._make_hex(data), length + 3))
+
+        logging.debug('>>> ' + self._make_hex(data))
+        data, crc = data[:-2], int.from_bytes(data[-2:], byteorder='big')
+
+        # Validate CRC
+        if (crc != self._crc(data)):
+          if attempt < max_retries - 1:
+            time.sleep(retry_delay)
+            continue
+          raise Error('Invalid input on channel, CRC for {} is {}, not {}!'.format(
+              self._make_hex(data), self._crc(data), crc))
+
+        # Validate module ID
+        if self._module_id != data[1:2]:
+          if attempt < max_retries - 1:
+            time.sleep(retry_delay)
+            continue
+          raise Error('Invalid module ID. Expected {}, got {}'.format(
+              self._make_hex(self._module_id), self._make_hex(data[1:2])))
+
+        return data
+
+      except (GarbageInputError, Error) as e:
+        last_error = e
+        if attempt < max_retries - 1:
+          logging.debug('Attempt %d failed: %s. Retrying...', attempt + 1, str(e))
+          time.sleep(retry_delay)
+          continue
+
+    # If we get here, all retries failed
+    raise last_error or Error('Failed to read message after {} attempts'.format(max_retries))
 
   def _send_message(self,
                     message: _Message,
