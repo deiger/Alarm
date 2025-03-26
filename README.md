@@ -42,7 +42,32 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
    - `ENTR`
    - `END` to exit
 
-## Setup
+## Setup using Home Assistant Add-ons
+If using [HomeAssistant], this is the preferred method.
+
+1. Go to [Settings > Add-ons](https://my.home-assistant.io/redirect/supervisor) panel in Home Assistant.
+1. Click the blue **Add-on Store** button, then click **⋮ menu → Repositories**.
+1. Add `https://github.com/deiger/Alarm` to the list, and close.
+1. Choose **PIMA Alarms** and install.
+1. Define the relevant configuration for the alarm:
+   - `log_level` - The minimal log level to send to syslog. Default is WARNING.
+   - `login` - The technician login code to the alarm.
+   - `zones` - Number of zones supported by the alarm, one of 32, 96 or 144.
+   - `mqtt_discovery_max_zones` - To avoid redundant entities for unused zones, set to the max number of the used zones.
+   - `mqtt_host` - The MQTT broker hostname or IP address. Set to `core-mosquitto` if using [Mosquitto broker](https://github.com/home-assistant/addons/tree/master/mosquitto).
+   - `mqtt_port` - The MQTT broker port. Default is 1883.
+   - `mqtt_topic` - The MQTT root topic. Default is &quot;pima_alarm&quot;. The server will listen on topic
+     &lt;{mqtt_topic}/command&gt; and publish to &lt;{mqtt_topic}/status&gt;.
+   - `mqtt_user` - The username for the MQTT broker.
+   - `mqtt_pass` - The password for the MQTT broker.
+   - `mqtt_client_id` - The MQTT client ID. If not set, a random client ID will be generated.
+   - `serialport` - Serial port, e.g. `/dev/serial0`. Needed if connected directly through GPIO serial.
+   - `pima_host` - Pima alarm hostname or IP address. Must be set if connected by ethernet.
+   - `pima_port` - Pima alarm port. Must be set if connected by ethernet.
+   - `key` - An arbitrary string key to authenticate the server calls.  
+     Consider generating a random key using `uuid -v4`.
+   - `port` - Port for the web server. Should be some number higher than 2048.
+## Manual Setup (only for advanced users)
 1. Create an SSL certificate, if you wish to access the server through HTTPS:
    ```bash
    openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 365
@@ -130,3 +155,10 @@ This program was built with no affiliation of PIMA Electronic Systems Ltd.
 ## Next steps
 1. [Groovy](http://groovy-lang.org/) [Device Type Handlers](https://docs.smartthings.com/en/latest/device-type-developers-guide/) for [SmartThings](https://www.smartthings.com/) integration.
 1. Support further functionality, e.g. change user codes.
+
+[HomeAssistant]: https://www.home-assistant.io/
+[MQTT Discovery]: https://www.home-assistant.io/docs/mqtt/discovery/
+[openHAB]: https://www.openhab.org/
+[SmartThings]: https://www.smartthings.com/
+[MQTT]: http://en.wikipedia.org/wiki/Mqtt
+[YAPF]: https://github.com/google/yapf
