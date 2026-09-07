@@ -383,7 +383,28 @@ def mqtt_publish_discovery() -> None:
       _mqtt_client.publish(_mqtt_topics['discovery'].format(f'binary_sensor/alarmed_zone_{i}'),
                            payload=to_json(alarmed_zones_config),
                            retain=True)
-
+    status_config = {
+      'name':
+        'PIMA Status',
+      'unique_id':
+        'pima_alarm_status',
+      'device': {
+        **device_info,
+      },
+      'state_topic':
+        _mqtt_topics['lwt'],
+      'device_class':
+        'problem',
+      'payload_on':
+        'offline',
+      'payload_off':
+        'online',
+      'icon':
+        'mdi:server'
+    }
+    _mqtt_client.publish(_mqtt_topics['discovery'].format('binary_sensor/status'),
+               payload=to_json(status_config),
+               retain=True)
 
 def mqtt_publish_lwt_online() -> None:
   if _mqtt_client:
