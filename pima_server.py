@@ -352,7 +352,7 @@ def mqtt_publish_discovery() -> None:
           'unique_id':
               f'pima_alarm_zone_{i}_open',
           'device':
-            device_info,
+              device_info,
           'state_topic':
               _mqtt_topics['pub'],
           'availability_topic':
