@@ -335,18 +335,24 @@ def mqtt_publish_discovery() -> None:
         'payload_arm_away':
             '{"command": "arm", "mode": "full_arm"}'
     }
-    _mqtt_client.publish(_mqtt_topics['discovery'].format('alarm_control_panel'),
+    _mqtt_client.publish(_mqtt_topics['discovery'].format('alarm_control_panel/pima_alarm'),
                          payload=to_json(alarm_config),
                          retain=True)
     for i in range(1, min(_parsed_args.mqtt_discovery_max_zone, _parsed_args.zones) + 1):
+      old_open_topic = os.path.join(_parsed_args.mqtt_discovery_prefix,
+                                    'binary_sensor', f'open_zone_{i}', 'pima_alarm', 'config')
+      old_alarmed_topic = os.path.join(_parsed_args.mqtt_discovery_prefix,
+                                       'binary_sensor', f'alarmed_zone_{i}', 'pima_alarm',
+                                       'config')
+      _mqtt_client.publish(old_open_topic, payload='', retain=True)
+      _mqtt_client.publish(old_alarmed_topic, payload='', retain=True)
       open_zones_config = {
           'name':
               f'Alarm Zone {i} Open',
           'unique_id':
               f'pima_alarm_zone_{i}_open',
-          'device': {
-              **device_info, 'via_device': 'pima_alarm'
-          },
+          'device':
+              device_info,
           'state_topic':
               _mqtt_topics['pub'],
           'availability_topic':
@@ -356,16 +362,16 @@ def mqtt_publish_discovery() -> None:
           'payload_off':
               'off',
           'value_template':
-              f"{{% if {i} in value_json['open zones'] %}}on{{% else %}}off{{% endif %}}"
+              f"{{% if {i} in value_json['open zones'] %}}on{{% else %}}off{{% endif %}}",
+          'device_class': 'motion'
       }
       alarmed_zones_config = {
           'name':
               f'Alarm Zone {i} Alarming',
           'unique_id':
               f'pima_alarm_zone_{i}_alarming',
-          'device': {
-              **device_info, 'via_device': 'pima_alarm'
-          },
+          'device':
+            device_info,
           'state_topic':
               _mqtt_topics['pub'],
           'availability_topic':
@@ -377,20 +383,22 @@ def mqtt_publish_discovery() -> None:
           'value_template':
               f"{{% if {i} in value_json['alarmed zones'] %}}on{{% else %}}off{{% endif %}}"
       }
-      _mqtt_client.publish(_mqtt_topics['discovery'].format(f'binary_sensor/open_zone_{i}'),
-                           payload=to_json(open_zones_config),
-                           retain=True)
-      _mqtt_client.publish(_mqtt_topics['discovery'].format(f'binary_sensor/alarmed_zone_{i}'),
-                           payload=to_json(alarmed_zones_config),
-                           retain=True)
+      _mqtt_client.publish(
+          _mqtt_topics['discovery'].format(f'binary_sensor/pima_alarm_zone_{i}_open'),
+          payload=to_json(open_zones_config),
+          retain=True)
+      _mqtt_client.publish(
+          _mqtt_topics['discovery'].format(f'binary_sensor/pima_alarm_zone_{i}_alarming'),
+          payload=to_json(alarmed_zones_config),
+          retain=True)
+
     status_config = {
       'name':
         'PIMA Status',
       'unique_id':
         'pima_alarm_status',
-      'device': {
-        **device_info,
-      },
+      'device':
+        device_info,
       'state_topic':
         _mqtt_topics['lwt'],
       'device_class':
@@ -403,8 +411,8 @@ def mqtt_publish_discovery() -> None:
         'mdi:server'
     }
     _mqtt_client.publish(_mqtt_topics['discovery'].format('binary_sensor/status'),
-               payload=to_json(status_config),
-               retain=True)
+        payload=to_json(status_config),
+        retain=True)
 
 def mqtt_publish_lwt_online() -> None:
   if _mqtt_client:
