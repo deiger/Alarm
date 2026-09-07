@@ -383,7 +383,6 @@ def mqtt_publish_discovery() -> None:
           'value_template':
               f"{{% if {i} in value_json['alarmed zones'] %}}on{{% else %}}off{{% endif %}}"
       }
-
       _mqtt_client.publish(
           _mqtt_topics['discovery'].format(f'binary_sensor/pima_alarm_zone_{i}_open'),
           payload=to_json(open_zones_config),
