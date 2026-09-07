@@ -397,9 +397,8 @@ def mqtt_publish_discovery() -> None:
         'PIMA Status',
       'unique_id':
         'pima_alarm_status',
-      'device': {
-        **device_info,
-      },
+      'device':
+        device_info,
       'state_topic':
         _mqtt_topics['lwt'],
       'device_class':
