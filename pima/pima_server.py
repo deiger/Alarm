@@ -46,7 +46,7 @@ import typing
 from urllib.parse import parse_qs, urlparse, ParseResult
 import _thread
 
-import pima
+from . import pima
 
 
 class AlarmServer(threading.Thread):
