@@ -6,12 +6,15 @@ LABEL io.hass.version="$BUILD_VERSION" io.hass.type="addon" io.hass.arch="armhf|
 COPY . /app
 WORKDIR /app
 
-RUN dpkg --add-architecture i386 && apt-get update && apt-get install -y --no-install-recommends jq
-RUN python -m pip install --upgrade setuptools
-RUN python setup.py install
+RUN dpkg --add-architecture i386 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends jq \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir .
 
 ENV PLATFORM=docker
-
 ENV OPTIONS_FILE=/data/options.json
 
 COPY run.sh /
