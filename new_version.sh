@@ -14,7 +14,7 @@ fi
 git tag -a $NEW_VERSION -m "$NEW_VERSION_MSG"
 PYTHONWARNINGS="ignore" auto-changelog
 
-for f in pima_server.py setup.py hassio/config.json; do
+for f in pima/__init__.py pima/pima_server.py setup.py hassio/config.json; do
   echo "Editing $f"
   if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS syntax
